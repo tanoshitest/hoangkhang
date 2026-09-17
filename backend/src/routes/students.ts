@@ -1,9 +1,11 @@
-const express = require('express');
-const { PrismaClient } = require('@prisma/client');
-const { requirePermission } = require('../middleware/rbac');
-const { z } = require('zod');
+import { Router } from 'express';
+import type { Response } from 'express';
+import { PrismaClient } from '@prisma/client';
+import { requirePermission } from '../middleware/rbac';
+import { z } from 'zod';
+import type { AuthenticatedRequest } from '../types';
 
-const router = express.Router();
+const router = Router();
 const prisma = new PrismaClient();
 
 const studentSchema = z.object({
@@ -24,21 +26,21 @@ const studentSchema = z.object({
 });
 
 // GET /api/students - Get all students
-router.get('/', requirePermission('students', 'read'), async (req, res) => {
+router.get('/', requirePermission('students', 'read'), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const status = req.query.status;
-    const search = req.query.search;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const status = req.query.status as string | undefined;
+    const search = req.query.search as string | undefined;
 
-    const where = {};
-    
+    const where: any = {};
+
     if (status) where.status = status;
     if (search) {
       where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
+        { name: { contains: search } },
         { phone: { contains: search } },
-        { email: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search } },
         { code: { contains: search } },
       ];
     }
@@ -77,7 +79,7 @@ router.get('/', requirePermission('students', 'read'), async (req, res) => {
 });
 
 // GET /api/students/:id - Get student by ID
-router.get('/:id', requirePermission('students', 'read'), async (req, res) => {
+router.get('/:id', requirePermission('students', 'read'), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const student = await prisma.student.findUnique({
@@ -125,29 +127,28 @@ router.get('/:id', requirePermission('students', 'read'), async (req, res) => {
 });
 
 // POST /api/students - Create new student
-router.post('/', requirePermission('students', 'write'), async (req, res) => {
+router.post('/', requirePermission('students', 'write'), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const data = studentSchema.parse(req.body);
-    
+
     // Check duplicate phone/email
     const existingStudent = await prisma.student.findFirst({
       where: {
         OR: [
           { phone: data.phone },
-          { email: data.email || undefined },
+          ...(data.email ? [{ email: data.email }] : []),
         ],
       },
     });
 
     if (existingStudent) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Student with this phone/email already exists',
         existingStudentId: existingStudent.id,
         existingStudentName: existingStudent.name,
       });
     }
 
-    // Generate student code
     const count = await prisma.student.count();
     const code = `S${String(count + 1).padStart(6, '0')}`;
 
@@ -155,7 +156,8 @@ router.post('/', requirePermission('students', 'write'), async (req, res) => {
       data: {
         ...data,
         code,
-        birthDate: data.birthDate ? new Date(data.birthDate) : undefined,
+        status: 'waiting_class',
+        birthDate: data.birthDate ? new Date(data.birthDate) : null,
       },
       include: {
         contacts: true,
@@ -165,14 +167,14 @@ router.post('/', requirePermission('students', 'write'), async (req, res) => {
     res.status(201).json(student);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res.status(400).json({ error: 'Validation error', details: error.issues });
     }
     res.status(500).json({ error: 'Failed to create student' });
   }
 });
 
 // PUT /api/students/:id - Update student
-router.put('/:id', requirePermission('students', 'write'), async (req, res) => {
+router.put('/:id', requirePermission('students', 'write'), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const data = studentSchema.partial().parse(req.body);
@@ -196,14 +198,14 @@ router.put('/:id', requirePermission('students', 'write'), async (req, res) => {
     res.json(updatedStudent);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res.status(400).json({ error: 'Validation error', details: error.issues });
     }
     res.status(500).json({ error: 'Failed to update student' });
   }
 });
 
 // GET /api/students/:id/enrollments - Get student enrollments
-router.get('/:id/enrollments', requirePermission('students', 'read'), async (req, res) => {
+router.get('/:id/enrollments', requirePermission('students', 'read'), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const enrollments = await prisma.enrollment.findMany({
@@ -223,7 +225,7 @@ router.get('/:id/enrollments', requirePermission('students', 'read'), async (req
 });
 
 // POST /api/students/:id/enroll - Enroll student to course
-router.post('/:id/enroll', requirePermission('students', 'write'), async (req, res) => {
+router.post('/:id/enroll', requirePermission('students', 'write'), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { courseId, classId } = req.body;
@@ -242,7 +244,7 @@ router.post('/:id/enroll', requirePermission('students', 'write'), async (req, r
       data: {
         studentId: id,
         courseId,
-        classId: classId || undefined,
+        classId: classId || null,
         status: 'enrolled',
       },
       include: {
@@ -251,13 +253,12 @@ router.post('/:id/enroll', requirePermission('students', 'write'), async (req, r
       },
     });
 
-    // Create enrollment event
     await prisma.enrollmentEvent.create({
       data: {
         enrollmentId: enrollment.id,
         type: 'enroll',
         effectiveDate: new Date(),
-        createdBy: 'system',
+        createdBy: req.user?.id || 'system',
       },
     });
 
@@ -267,4 +268,4 @@ router.post('/:id/enroll', requirePermission('students', 'write'), async (req, r
   }
 });
 
-module.exports = router;
+export default router;

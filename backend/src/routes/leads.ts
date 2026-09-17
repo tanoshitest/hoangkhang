@@ -1,9 +1,11 @@
-const express = require('express');
-const { PrismaClient } = require('@prisma/client');
-const { requirePermission } = require('../middleware/rbac');
-const { z } = require('zod');
+import { Router } from 'express';
+import type { Response } from 'express';
+import { PrismaClient } from '@prisma/client';
+import { requirePermission } from '../middleware/rbac';
+import { z } from 'zod';
+import type { AuthenticatedRequest } from '../types';
 
-const router = express.Router();
+const router = Router();
 const prisma = new PrismaClient();
 
 const leadSchema = z.object({
@@ -18,25 +20,27 @@ const leadSchema = z.object({
   japanProgram: z.string().optional(),
   availableTime: z.string().optional(),
   source: z.string(),
+  interestedCourse: z.string().optional(),
+  expectedClass: z.string().optional(),
   notes: z.string().optional(),
 });
 
 // GET /api/leads - Get all leads with pagination
-router.get('/', requirePermission('leads', 'read'), async (req, res) => {
+router.get('/', requirePermission('leads', 'read'), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const status = req.query.status;
-    const search = req.query.search;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const status = req.query.status as string | undefined;
+    const search = req.query.search as string | undefined;
 
-    const where = {};
-    
+    const where: any = {};
+
     if (status) where.status = status;
     if (search) {
       where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
+        { name: { contains: search } },
         { phone: { contains: search } },
-        { email: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search } },
       ];
     }
 
@@ -75,7 +79,7 @@ router.get('/', requirePermission('leads', 'read'), async (req, res) => {
 });
 
 // GET /api/leads/:id - Get lead by ID
-router.get('/:id', requirePermission('leads', 'read'), async (req, res) => {
+router.get('/:id', requirePermission('leads', 'read'), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const lead = await prisma.lead.findUnique({
@@ -102,7 +106,6 @@ router.get('/:id', requirePermission('leads', 'read'), async (req, res) => {
       return res.status(404).json({ error: 'Lead not found' });
     }
 
-    // Sales chỉ xem lead của mình
     if (req.user?.roles.includes('sales') && !req.user.roles.includes('admin')) {
       if (lead.assignedToId !== req.user.id) {
         return res.status(403).json({ error: 'Access denied' });
@@ -116,29 +119,28 @@ router.get('/:id', requirePermission('leads', 'read'), async (req, res) => {
 });
 
 // POST /api/leads - Create new lead
-router.post('/', requirePermission('leads', 'write'), async (req, res) => {
+router.post('/', requirePermission('leads', 'write'), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const data = leadSchema.parse(req.body);
-    
+
     // Check duplicate phone/email
     const existingLead = await prisma.lead.findFirst({
       where: {
         OR: [
           { phone: data.phone },
-          { email: data.email || undefined },
+          ...(data.email ? [{ email: data.email }] : []),
         ],
       },
     });
 
     if (existingLead) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Lead with this phone/email already exists',
         existingLeadId: existingLead.id,
         existingLeadName: existingLead.name,
       });
     }
 
-    // Generate lead code
     const count = await prisma.lead.count();
     const code = `L${String(count + 1).padStart(6, '0')}`;
 
@@ -146,6 +148,7 @@ router.post('/', requirePermission('leads', 'write'), async (req, res) => {
       data: {
         ...data,
         code,
+        status: 'new',
         assignedToId: req.user?.id,
       },
       include: {
@@ -158,19 +161,18 @@ router.post('/', requirePermission('leads', 'write'), async (req, res) => {
     res.status(201).json(lead);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res.status(400).json({ error: 'Validation error', details: error.issues });
     }
     res.status(500).json({ error: 'Failed to create lead' });
   }
 });
 
 // PUT /api/leads/:id - Update lead
-router.put('/:id', requirePermission('leads', 'write'), async (req, res) => {
+router.put('/:id', requirePermission('leads', 'write'), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const data = leadSchema.partial().parse(req.body);
 
-    // Check permission
     const lead = await prisma.lead.findUnique({ where: { id } });
     if (!lead) {
       return res.status(404).json({ error: 'Lead not found' });
@@ -195,17 +197,50 @@ router.put('/:id', requirePermission('leads', 'write'), async (req, res) => {
     res.json(updatedLead);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res.status(400).json({ error: 'Validation error', details: error.issues });
     }
     res.status(500).json({ error: 'Failed to update lead' });
   }
 });
 
-// POST /api/leads/:id/convert - Convert lead to student
-router.post('/:id/convert', requirePermission('students', 'write'), async (req, res) => {
+// PATCH /api/leads/:id/status - Update lead status (for Kanban drag-drop)
+router.patch('/:id/status', requirePermission('leads', 'write'), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    
+    const { status } = req.body;
+
+    const lead = await prisma.lead.findUnique({ where: { id } });
+    if (!lead) {
+      return res.status(404).json({ error: 'Lead not found' });
+    }
+
+    if (req.user?.roles.includes('sales') && !req.user.roles.includes('admin')) {
+      if (lead.assignedToId !== req.user.id) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+    }
+
+    const updatedLead = await prisma.lead.update({
+      where: { id },
+      data: { status },
+      include: {
+        assignedTo: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+    });
+
+    res.json(updatedLead);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update lead status' });
+  }
+});
+
+// POST /api/leads/:id/convert - Convert lead to student
+router.post('/:id/convert', requirePermission('students', 'write'), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
     const lead = await prisma.lead.findUnique({ where: { id } });
     if (!lead) {
       return res.status(404).json({ error: 'Lead not found' });
@@ -215,18 +250,15 @@ router.post('/:id/convert', requirePermission('students', 'write'), async (req, 
       return res.status(400).json({ error: 'Lead already converted' });
     }
 
-    // Check permission
     if (req.user?.roles.includes('sales') && !req.user.roles.includes('admin')) {
       if (lead.assignedToId !== req.user.id) {
         return res.status(403).json({ error: 'Access denied' });
       }
     }
 
-    // Generate student code
     const count = await prisma.student.count();
     const code = `S${String(count + 1).padStart(6, '0')}`;
 
-    // Create student from lead
     const student = await prisma.student.create({
       data: {
         code,
@@ -235,11 +267,11 @@ router.post('/:id/convert', requirePermission('students', 'write'), async (req, 
         email: lead.email,
         educationLevel: lead.educationLevel,
         goal: lead.goal,
+        status: 'waiting_class',
         convertedFromLeadId: lead.id,
       },
     });
 
-    // Update lead status
     await prisma.lead.update({
       where: { id },
       data: {
@@ -261,4 +293,4 @@ router.post('/:id/convert', requirePermission('students', 'write'), async (req, 
   }
 });
 
-module.exports = router;
+export default router;

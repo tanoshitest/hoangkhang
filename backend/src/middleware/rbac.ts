@@ -1,7 +1,8 @@
-const express = require('express');
+import type { Response, NextFunction } from 'express';
+import type { AuthenticatedRequest } from '../types';
 
 // Permission matrix based on plan
-const ROLE_PERMISSIONS = {
+const ROLE_PERMISSIONS: Record<string, string[]> = {
   admin: [
     'leads:*', 'students:*', 'courses:*', 'classes:*', 'sessions:*',
     'attendance:*', 'finance:*', 'teachers:*', 'reports:*', 'system:*'
@@ -29,29 +30,26 @@ const ROLE_PERMISSIONS = {
   ]
 };
 
-const requirePermission = (module, action) => {
-  return (req, res, next) => {
+export const requirePermission = (module: string, action: string) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     const userRoles = req.user?.roles || [];
     const requiredPermission = `${module}:${action}`;
-    
-    // Admin có tất cả quyền
+
     if (userRoles.includes('admin')) {
       return next();
     }
 
-    // Kiểm tra permission cho từng role
     const hasPermission = userRoles.some(role => {
       const permissions = ROLE_PERMISSIONS[role] || [];
-      return permissions.includes(`${module}:*`) || 
-             permissions.includes(requiredPermission) ||
-             permissions.includes(`${module}:read`) && action === 'read';
+      return permissions.includes(`${module}:*`) ||
+             permissions.includes(requiredPermission);
     });
 
     if (!hasPermission) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         error: 'Insufficient permissions',
         required: requiredPermission,
-        userRoles 
+        userRoles
       });
     }
 
@@ -59,22 +57,19 @@ const requirePermission = (module, action) => {
   };
 };
 
-// Check if user has specific role
-const requireRole = (roles) => {
-  return (req, res, next) => {
+export const requireRole = (roles: string[]) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     const userRoles = req.user?.roles || [];
     const hasRole = roles.some(role => userRoles.includes(role));
 
     if (!hasRole) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         error: 'Insufficient role',
         required: roles,
-        userRoles 
+        userRoles
       });
     }
 
     next();
   };
 };
-
-module.exports = { requirePermission, requireRole };

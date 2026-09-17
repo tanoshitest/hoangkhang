@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Search, Filter, MoreHorizontal } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Plus, Search, Filter, MoreHorizontal, Kanban, Users } from 'lucide-react';
 
 interface Lead {
   id: string;
@@ -19,6 +20,7 @@ interface Lead {
 }
 
 export default function LeadsPage() {
+  const router = useRouter();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -92,9 +94,19 @@ export default function LeadsPage() {
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-semibold text-gray-900">Tuyển sinh</h1>
           </div>
-          <div className="mt-4 flex md:mt-0 md:ml-4">
-            <button className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
-              <Plus className="-ml-1 mr-2 h-5 w-5" />
+          <div className="mt-4 flex md:mt-0 md:ml-4 space-x-3">
+            <button 
+              onClick={() => router.push('/leads/kanban')}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            >
+              <Kanban className="mr-2 h-4 w-4" />
+              Kanban
+            </button>
+            <button 
+              onClick={() => router.push('/leads/new')}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+            >
+              <Plus className="-ml-1 mr-2 h-4 w-4" />
               Thêm Lead
             </button>
           </div>
@@ -125,7 +137,10 @@ export default function LeadsPage() {
           <ul className="divide-y divide-gray-200">
             {leads.map((lead) => (
               <li key={lead.id}>
-                <div className="px-4 py-4 flex items-center justify-between">
+                <div 
+                  className="px-4 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50"
+                  onClick={() => router.push(`/leads/${lead.id}`)}
+                >
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
                       <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">

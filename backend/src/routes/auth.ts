@@ -1,10 +1,11 @@
-const express = require('express');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
-const { z } = require('zod');
+import { Router } from 'express';
+import type { Request, Response } from 'express';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { PrismaClient } from '@prisma/client';
+import { z } from 'zod';
 
-const router = express.Router();
+const router = Router();
 const prisma = new PrismaClient();
 
 const loginSchema = z.object({
@@ -21,7 +22,7 @@ const registerSchema = z.object({
 });
 
 // POST /api/auth/login
-router.post('/login', async (req, res) => {
+router.post('/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = loginSchema.parse(req.body);
 
@@ -47,7 +48,7 @@ router.post('/login', async (req, res) => {
 
     const token = jwt.sign(
       { userId: user.id },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET as string,
       { expiresIn: '24h' }
     );
 
@@ -66,11 +67,10 @@ router.post('/login', async (req, res) => {
 });
 
 // POST /api/auth/register (admin only)
-router.post('/register', async (req, res) => {
+router.post('/register', async (req: Request, res: Response) => {
   try {
     const { email, password, name, phone, role } = registerSchema.parse(req.body);
 
-    // Check if user exists
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
@@ -79,10 +79,8 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'User already exists' });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Get role
     const roleRecord = await prisma.role.findUnique({
       where: { name: role },
     });
@@ -91,7 +89,6 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Invalid role' });
     }
 
-    // Create user
     const user = await prisma.user.create({
       data: {
         email,
@@ -128,8 +125,8 @@ router.post('/register', async (req, res) => {
 });
 
 // POST /api/auth/logout
-router.post('/logout', (req, res) => {
+router.post('/logout', (req: Request, res: Response) => {
   res.json({ message: 'Logged out successfully' });
 });
 
-module.exports = router;
+export default router;

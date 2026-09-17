@@ -1,13 +1,14 @@
-const express = require('express');
-const { PrismaClient } = require('@prisma/client');
-const { requirePermission } = require('../middleware/rbac');
-const bcrypt = require('bcrypt');
+import { Router } from 'express';
+import type { Response } from 'express';
+import { PrismaClient } from '@prisma/client';
+import { requirePermission } from '../middleware/rbac';
+import type { AuthenticatedRequest } from '../types';
 
-const router = express.Router();
+const router = Router();
 const prisma = new PrismaClient();
 
 // GET /api/users - Get all users
-router.get('/', requirePermission('system', 'read'), async (req, res) => {
+router.get('/', requirePermission('system', 'read'), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const users = await prisma.user.findMany({
       include: {
@@ -33,8 +34,21 @@ router.get('/', requirePermission('system', 'read'), async (req, res) => {
   }
 });
 
+// GET /api/users/roles/list - Get all roles
+router.get('/roles/list', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const roles = await prisma.role.findMany({
+      where: { isActive: true },
+    });
+
+    res.json(roles);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch roles' });
+  }
+});
+
 // GET /api/users/:id - Get user by ID
-router.get('/:id', requirePermission('system', 'read'), async (req, res) => {
+router.get('/:id', requirePermission('system', 'read'), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const user = await prisma.user.findUnique({
@@ -67,7 +81,7 @@ router.get('/:id', requirePermission('system', 'read'), async (req, res) => {
 });
 
 // PUT /api/users/:id - Update user
-router.put('/:id', requirePermission('system', 'write'), async (req, res) => {
+router.put('/:id', requirePermission('system', 'write'), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { name, phone, isActive } = req.body;
@@ -100,17 +114,4 @@ router.put('/:id', requirePermission('system', 'write'), async (req, res) => {
   }
 });
 
-// GET /api/users/roles/list - Get all roles
-router.get('/roles/list', async (req, res) => {
-  try {
-    const roles = await prisma.role.findMany({
-      where: { isActive: true },
-    });
-
-    res.json(roles);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch roles' });
-  }
-});
-
-module.exports = router;
+export default router;

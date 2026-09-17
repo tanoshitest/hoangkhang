@@ -1,13 +1,14 @@
-const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv');
-const { PrismaClient } = require('@prisma/client');
-const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/users');
-const leadRoutes = require('./routes/leads');
-const studentRoutes = require('./routes/students');
-const { authenticateToken } = require('./middleware/auth');
-const { errorHandler } = require('./middleware/errorHandler');
+import express from 'express';
+import type { Request, Response } from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import { PrismaClient } from '@prisma/client';
+import authRoutes from './routes/auth';
+import userRoutes from './routes/users';
+import leadRoutes from './routes/leads';
+import studentRoutes from './routes/students';
+import { authenticateToken } from './middleware/auth';
+import { errorHandler } from './middleware/errorHandler';
 
 dotenv.config();
 
@@ -20,7 +21,7 @@ app.use(cors());
 app.use(express.json());
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 

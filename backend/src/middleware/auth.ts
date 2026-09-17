@@ -1,10 +1,11 @@
-const express = require('express');
-const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
+import type { Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import { PrismaClient } from '@prisma/client';
+import type { AuthenticatedRequest } from '../types';
 
 const prisma = new PrismaClient();
 
-const authenticateToken = async (req, res, next) => {
+export const authenticateToken = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -13,7 +14,7 @@ const authenticateToken = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { userId: string };
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
@@ -42,5 +43,3 @@ const authenticateToken = async (req, res, next) => {
     return res.status(403).json({ error: 'Invalid token' });
   }
 };
-
-module.exports = { authenticateToken };

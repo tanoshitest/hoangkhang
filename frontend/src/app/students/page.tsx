@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Plus, Search, Filter, MoreHorizontal, Users } from 'lucide-react';
 
 interface Student {
@@ -16,6 +17,7 @@ interface Student {
 }
 
 export default function StudentsPage() {
+  const router = useRouter();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -84,8 +86,11 @@ export default function StudentsPage() {
             <h1 className="text-2xl font-semibold text-gray-900">Học viên</h1>
           </div>
           <div className="mt-4 flex md:mt-0 md:ml-4">
-            <button className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
-              <Plus className="-ml-1 mr-2 h-5 w-5" />
+            <button 
+              onClick={() => router.push('/students/new')}
+              className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+            >
+              <Plus className="-ml-1 mr-2 h-4 w-4" />
               Thêm Học viên
             </button>
           </div>
@@ -116,7 +121,10 @@ export default function StudentsPage() {
           <ul className="divide-y divide-gray-200">
             {students.map((student) => (
               <li key={student.id}>
-                <div className="px-4 py-4 flex items-center justify-between">
+                <div 
+                  className="px-4 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50"
+                  onClick={() => router.push(`/students/${student.id}`)}
+                >
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
                       <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">

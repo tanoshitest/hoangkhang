@@ -1,0 +1,508 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { ArrowLeft, Edit, Phone, Mail, MapPin, Calendar, User, MessageSquare, Clock, CheckCircle, XCircle } from 'lucide-react';
+
+interface Lead {
+  id: string;
+  code: string;
+  name: string;
+  phone: string;
+  email?: string;
+  zalo?: string;
+  birthYear?: number;
+  province?: string;
+  educationLevel?: string;
+  goal?: string;
+  japanProgram?: string;
+  availableTime?: string;
+  source: string;
+  status: string;
+  interestedCourse?: string;
+  expectedClass?: string;
+  notRegisteredReason?: string;
+  notes?: string;
+  assignedTo?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  activities: Array<{
+    id: string;
+    type: string;
+    content: string;
+    createdAt: string;
+  }>;
+  followUps: Array<{
+    id: string;
+    date: string;
+    content: string;
+    status: string;
+  }>;
+  trialTests: Array<{
+    id: string;
+    type: string;
+    date: string;
+    result?: string;
+    notes?: string;
+  }>;
+  createdAt: string;
+}
+
+export default function LeadDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const [lead, setLead] = useState<Lead | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
+
+  useEffect(() => {
+    if (params.id) {
+      fetchLead(params.id as string);
+    }
+  }, [params.id]);
+
+  const fetchLead = async (id: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/leads/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setLead(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch lead:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      new: 'bg-blue-100 text-blue-800',
+      assigned: 'bg-yellow-100 text-yellow-800',
+      contacted: 'bg-purple-100 text-purple-800',
+      consulting: 'bg-pink-100 text-pink-800',
+      test_pending: 'bg-orange-100 text-orange-800',
+      trial: 'bg-cyan-100 text-cyan-800',
+      decision_pending: 'bg-green-100 text-green-800',
+      registered: 'bg-green-100 text-green-800',
+      not_registered: 'bg-red-100 text-red-800',
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      new: 'Mới',
+      assigned: 'Đã phân công',
+      contacted: 'Đã liên hệ',
+      consulting: 'Đang tư vấn',
+      test_pending: 'Chờ kiểm tra',
+      trial: 'Học thử',
+      decision_pending: 'Chờ quyết định',
+      registered: 'Đã đăng ký',
+      not_registered: 'Không đăng ký',
+    };
+    return labels[status] || status;
+  };
+
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'call': return <Phone className="h-4 w-4" />;
+      case 'message': return <MessageSquare className="h-4 w-4" />;
+      case 'email': return <Mail className="h-4 w-4" />;
+      case 'meeting': return <Calendar className="h-4 w-4" />;
+      default: return <MessageSquare className="h-4 w-4" />;
+    }
+  };
+
+  const getFollowUpStatus = (status: string) => {
+    switch (status) {
+      case 'scheduled': return <Clock className="h-4 w-4 text-yellow-500" />;
+      case 'done': return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'overdue': return <XCircle className="h-4 w-4 text-red-500" />;
+      default: return <Clock className="h-4 w-4 text-gray-400" />;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!lead) {
+    return (
+      <div className="text-center py-12">
+        <h3 className="mt-2 text-sm font-medium text-gray-900">Lead không tồn tại</h3>
+        <button
+          onClick={() => router.push('/leads')}
+          className="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+        >
+          <ArrowLeft className="-ml-1 mr-2 h-5 w-5" />
+          Quay lại
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <button
+                onClick={() => router.push('/leads')}
+                className="mr-4 p-2 text-gray-400 hover:text-gray-600"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+              <div>
+                <h1 className="text-2xl font-semibold text-gray-900">{lead.name}</h1>
+                <p className="text-sm text-gray-500">{lead.code}</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(lead.status)}`}>
+                {getStatusLabel(lead.status)}
+              </span>
+              <button className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                <Edit className="-ml-1 mr-2 h-4 w-4" />
+                Chỉnh sửa
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8">
+            {[
+              { id: 'overview', name: 'Tổng quan' },
+              { id: 'activities', name: 'Hoạt động' },
+              { id: 'followups', name: 'Follow-up' },
+              { id: 'trials', name: 'Kiểm tra/Học thử' },
+              { id: 'history', name: 'Lịch sử' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`${
+                  activeTab === tab.id
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm`}
+              >
+                {tab.name}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        {/* Tab Content */}
+        <div className="mt-8">
+          {activeTab === 'overview' && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Main Info */}
+              <div className="lg:col-span-2">
+                <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+                  <div className="px-4 py-5 sm:px-6">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900">Thông tin cơ bản</h3>
+                  </div>
+                  <div className="border-t border-gray-200 px-4 py-5 sm:p-0">
+                    <dl className="sm:divide-y sm:divide-gray-200">
+                      <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt className="text-sm font-medium text-gray-500">Họ tên</dt>
+                        <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{lead.name}</dd>
+                      </div>
+                      <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt className="text-sm font-medium text-gray-500">Điện thoại</dt>
+                        <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{lead.phone}</dd>
+                      </div>
+                      {lead.email && (
+                        <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                          <dt className="text-sm font-medium text-gray-500">Email</dt>
+                          <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{lead.email}</dd>
+                        </div>
+                      )}
+                      {lead.zalo && (
+                        <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                          <dt className="text-sm font-medium text-gray-500">Zalo</dt>
+                          <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{lead.zalo}</dd>
+                        </div>
+                      )}
+                      {lead.birthYear && (
+                        <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                          <dt className="text-sm font-medium text-gray-500">Năm sinh</dt>
+                          <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{lead.birthYear}</dd>
+                        </div>
+                      )}
+                      {lead.province && (
+                        <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                          <dt className="text-sm font-medium text-gray-500">Tỉnh/thành</dt>
+                          <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{lead.province}</dd>
+                        </div>
+                      )}
+                      {lead.educationLevel && (
+                        <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                          <dt className="text-sm font-medium text-gray-500">Trình độ quan tâm</dt>
+                          <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{lead.educationLevel}</dd>
+                        </div>
+                      )}
+                      {lead.goal && (
+                        <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                          <dt className="text-sm font-medium text-gray-500">Mục tiêu học</dt>
+                          <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{lead.goal}</dd>
+                        </div>
+                      )}
+                      {lead.japanProgram && (
+                        <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                          <dt className="text-sm font-medium text-gray-500">Chương trình đi Nhật</dt>
+                          <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{lead.japanProgram}</dd>
+                        </div>
+                      )}
+                      {lead.availableTime && (
+                        <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                          <dt className="text-sm font-medium text-gray-500">Lịch có thể học</dt>
+                          <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{lead.availableTime}</dd>
+                        </div>
+                      )}
+                      {lead.interestedCourse && (
+                        <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                          <dt className="text-sm font-medium text-gray-500">Khóa quan tâm</dt>
+                          <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{lead.interestedCourse}</dd>
+                        </div>
+                      )}
+                      {lead.expectedClass && (
+                        <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                          <dt className="text-sm font-medium text-gray-500">Lớp dự kiến</dt>
+                          <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{lead.expectedClass}</dd>
+                        </div>
+                      )}
+                      {lead.notRegisteredReason && (
+                        <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                          <dt className="text-sm font-medium text-gray-500">Lý do chưa đăng ký</dt>
+                          <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{lead.notRegisteredReason}</dd>
+                        </div>
+                      )}
+                      {lead.notes && (
+                        <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                          <dt className="text-sm font-medium text-gray-500">Ghi chú</dt>
+                          <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{lead.notes}</dd>
+                        </div>
+                      )}
+                    </dl>
+                  </div>
+                </div>
+              </div>
+
+              {/* Side Info */}
+              <div className="space-y-6">
+                {/* Source & Assignment */}
+                <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+                  <div className="px-4 py-5 sm:px-6">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900">Nguồn & Phân công</h3>
+                  </div>
+                  <div className="border-t border-gray-200 px-4 py-5">
+                    <dl className="space-y-4">
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Nguồn khách</dt>
+                        <dd className="mt-1 text-sm text-gray-900">{lead.source}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Người phụ trách</dt>
+                        <dd className="mt-1 text-sm text-gray-900">
+                          {lead.assignedTo?.name || 'Chưa phân công'}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Ngày nhận lead</dt>
+                        <dd className="mt-1 text-sm text-gray-900">
+                          {new Date(lead.createdAt).toLocaleDateString('vi-VN')}
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+                  <div className="px-4 py-5 sm:px-6">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900">Thao tác nhanh</h3>
+                  </div>
+                  <div className="border-t border-gray-200 px-4 py-5 space-y-3">
+                    <button className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700">
+                      <Phone className="mr-2 h-4 w-4" />
+                      Gọi điện
+                    </button>
+                    <button className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      Nhắn tin
+                    </button>
+                    <button className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700">
+                      <Mail className="mr-2 h-4 w-4" />
+                      Gửi email
+                    </button>
+                    <button className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700">
+                      <Calendar className="mr-2 h-4 w-4" />
+                      Đặt lịch hẹn
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'activities' && (
+            <div className="bg-white shadow overflow-hidden sm:rounded-md">
+              <div className="px-4 py-5 sm:px-6">
+                <h3 className="text-lg leading-6 font-medium text-gray-900">Lịch sử trao đổi</h3>
+              </div>
+              <div className="border-t border-gray-200">
+                {lead.activities.length === 0 ? (
+                  <div className="text-center py-12">
+                    <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">Chưa có hoạt động nào</h3>
+                    <p className="mt-1 text-sm text-gray-500">Bắt đầu ghi nhận trao đổi với lead.</p>
+                  </div>
+                ) : (
+                  <ul className="divide-y divide-gray-200">
+                    {lead.activities.map((activity) => (
+                      <li key={activity.id} className="px-4 py-4">
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0">
+                            <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                              {getActivityIcon(activity.type)}
+                            </div>
+                          </div>
+                          <div className="ml-3 flex-1">
+                            <div className="text-sm text-gray-900">{activity.content}</div>
+                            <div className="mt-1 text-sm text-gray-500">
+                              {new Date(activity.createdAt).toLocaleString('vi-VN')}
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'followups' && (
+            <div className="bg-white shadow overflow-hidden sm:rounded-md">
+              <div className="px-4 py-5 sm:px-6">
+                <h3 className="text-lg leading-6 font-medium text-gray-900">Lịch follow-up</h3>
+              </div>
+              <div className="border-t border-gray-200">
+                {lead.followUps.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Calendar className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">Chưa có lịch follow-up nào</h3>
+                    <p className="mt-1 text-sm text-gray-500">Đặt lịch chăm sóc lead tiếp theo.</p>
+                  </div>
+                ) : (
+                  <ul className="divide-y divide-gray-200">
+                    {lead.followUps.map((followUp) => (
+                      <li key={followUp.id} className="px-4 py-4">
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0">
+                            <div className="h-8 w-8 rounded-full bg-yellow-100 flex items-center justify-center">
+                              {getFollowUpStatus(followUp.status)}
+                            </div>
+                          </div>
+                          <div className="ml-3 flex-1">
+                            <div className="text-sm text-gray-900">{followUp.content}</div>
+                            <div className="mt-1 text-sm text-gray-500">
+                              {new Date(followUp.date).toLocaleString('vi-VN')}
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'trials' && (
+            <div className="bg-white shadow overflow-hidden sm:rounded-md">
+              <div className="px-4 py-5 sm:px-6">
+                <h3 className="text-lg leading-6 font-medium text-gray-900">Kiểm tra & Học thử</h3>
+              </div>
+              <div className="border-t border-gray-200">
+                {lead.trialTests.length === 0 ? (
+                  <div className="text-center py-12">
+                    <CheckCircle className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">Chưa có kiểm tra/học thử nào</h3>
+                    <p className="mt-1 text-sm text-gray-500">Ghi nhận kết quả kiểm tra đầu vào hoặc học thử.</p>
+                  </div>
+                ) : (
+                  <ul className="divide-y divide-gray-200">
+                    {lead.trialTests.map((trial) => (
+                      <li key={trial.id} className="px-4 py-4">
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0">
+                            <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            </div>
+                          </div>
+                          <div className="ml-3 flex-1">
+                            <div className="text-sm font-medium text-gray-900">
+                              {trial.type === 'placement_test' ? 'Kiểm tra đầu vào' : 'Học thử'}
+                            </div>
+                            <div className="mt-1 text-sm text-gray-500">
+                              {new Date(trial.date).toLocaleDateString('vi-VN')}
+                            </div>
+                            {trial.result && (
+                              <div className="mt-1 text-sm text-gray-900">
+                                Kết quả: {trial.result}
+                              </div>
+                            )}
+                            {trial.notes && (
+                              <div className="mt-1 text-sm text-gray-500">
+                                Ghi chú: {trial.notes}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'history' && (
+            <div className="bg-white shadow overflow-hidden sm:rounded-md">
+              <div className="px-4 py-5 sm:px-6">
+                <h3 className="text-lg leading-6 font-medium text-gray-900">Lịch sử thay đổi</h3>
+              </div>
+              <div className="border-t border-gray-200">
+                <div className="text-center py-12">
+                  <Clock className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">Lịch sử thay đổi</h3>
+                  <p className="mt-1 text-sm text-gray-500">Chức năng audit log sẽ được triển khai sau.</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
