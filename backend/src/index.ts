@@ -12,6 +12,7 @@ import classRoutes from './routes/classes';
 import sessionRoutes from './routes/sessions';
 import teacherRoutes from './routes/teachers';
 import warningRoutes from './routes/warnings';
+import financeRoutes from './routes/finance';
 import { authenticateToken } from './middleware/auth';
 import { errorHandler } from './middleware/errorHandler';
 
@@ -40,6 +41,7 @@ app.use('/api/classes', authenticateToken, classRoutes);
 app.use('/api/sessions', authenticateToken, sessionRoutes);
 app.use('/api/teachers', authenticateToken, teacherRoutes);
 app.use('/api/warnings', authenticateToken, warningRoutes);
+app.use('/api/finance', authenticateToken, financeRoutes);
 
 // Error handling
 app.use(errorHandler);
