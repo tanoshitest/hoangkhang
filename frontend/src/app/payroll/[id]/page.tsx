@@ -30,17 +30,17 @@ interface Period {
 }
 
 const TYPE_LABELS: Record<string, { label: string; color: string }> = {
-  regular: { label: 'Buổi thường', color: 'bg-blue-100 text-blue-800' },
+  regular: { label: 'Buổi thường', color: 'bg-brand-100 text-brand-800' },
   makeup: { label: 'Dạy bù', color: 'bg-purple-100 text-purple-800' },
   substitute: { label: 'Dạy thay', color: 'bg-indigo-100 text-indigo-800' },
   trial: { label: 'Học thử', color: 'bg-teal-100 text-teal-800' },
-  cancelled: { label: 'Hủy lớp', color: 'bg-gray-100 text-gray-600' },
+  cancelled: { label: 'Hủy lớp', color: 'bg-slate-100 text-slate-600' },
   adjustment: { label: 'Cộng/trừ', color: 'bg-yellow-100 text-yellow-800' },
 };
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  draft: { label: 'Nháp', color: 'bg-gray-100 text-gray-800' },
-  confirmed: { label: 'Đã xác nhận', color: 'bg-blue-100 text-blue-800' },
+  draft: { label: 'Nháp', color: 'bg-slate-100 text-slate-800' },
+  confirmed: { label: 'Đã xác nhận', color: 'bg-brand-100 text-brand-800' },
   paid: { label: 'Đã thanh toán', color: 'bg-green-100 text-green-800' },
 };
 
@@ -116,23 +116,23 @@ export default function PayrollDetailPage({ params }: { params: Promise<{ id: st
   };
 
   if (loading) return <div className="flex justify-center items-center h-64">Đang tải...</div>;
-  if (!period) return <div className="text-center py-12 text-gray-500">Không tìm thấy bảng lương</div>;
+  if (!period) return <div className="text-center py-12 text-slate-500">Không tìm thấy bảng lương</div>;
 
   const isDraft = period.status === 'draft';
 
   return (
-    <div className="py-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-        <Link href="/payroll" className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">
+    <div>
+      <div className="max-w-7xl mx-auto">
+        <Link href="/payroll" className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700">
           <ArrowLeft className="h-4 w-4 mr-1" /> Quay lại Bảng lương
         </Link>
 
         <div className="mt-4 md:flex md:items-start md:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">
-              {period.teacher.name} <span className="text-base font-normal text-gray-500">({period.teacher.code})</span>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">
+              {period.teacher.name} <span className="text-base font-normal text-slate-500">({period.teacher.code})</span>
             </h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-slate-500 mt-1">
               Kỳ: {formatDate(period.periodStart)} → {formatDate(period.periodEnd)}
               <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_LABELS[period.status]?.color}`}>
                 {STATUS_LABELS[period.status]?.label}
@@ -143,18 +143,18 @@ export default function PayrollDetailPage({ params }: { params: Promise<{ id: st
             {isDraft && (
               <>
                 <button onClick={() => setShowAdj(!showAdj)}
-                  className="inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50">
+                  className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50">
                   <Plus className="h-4 w-4 mr-1" /> Cộng/trừ
                 </button>
                 <button onClick={() => transition('confirm')}
-                  className="inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                  className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white bg-brand-600 hover:bg-brand-700">
                   <CheckCircle className="h-4 w-4 mr-1" /> Xác nhận
                 </button>
               </>
             )}
             {period.status === 'confirmed' && (
               <button onClick={() => transition('pay')}
-                className="inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700">
+                className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white bg-green-600 hover:bg-green-700">
                 <DollarSign className="h-4 w-4 mr-1" /> Đánh dấu đã trả
               </button>
             )}
@@ -165,39 +165,39 @@ export default function PayrollDetailPage({ params }: { params: Promise<{ id: st
 
         {/* Summary */}
         <div className="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-3">
-          <div className="bg-white shadow rounded-lg p-5">
-            <p className="text-sm text-gray-500 flex items-center"><Clock className="h-4 w-4 mr-1" /> Tổng giờ</p>
-            <p className="text-2xl font-semibold text-gray-900 mt-1">{period.totalHours.toFixed(1)}h</p>
+          <div className="bg-white border border-slate-200 shadow-sm rounded-lg p-5">
+            <p className="text-sm text-slate-500 flex items-center"><Clock className="h-4 w-4 mr-1" /> Tổng giờ</p>
+            <p className="text-xl font-bold tracking-tight text-slate-900 mt-1">{period.totalHours.toFixed(1)}h</p>
           </div>
-          <div className="bg-white shadow rounded-lg p-5">
-            <p className="text-sm text-gray-500">Số mục</p>
-            <p className="text-2xl font-semibold text-gray-900 mt-1">{period.items.length}</p>
+          <div className="bg-white border border-slate-200 shadow-sm rounded-lg p-5">
+            <p className="text-sm text-slate-500">Số mục</p>
+            <p className="text-xl font-bold tracking-tight text-slate-900 mt-1">{period.items.length}</p>
           </div>
-          <div className="bg-white shadow rounded-lg p-5">
-            <p className="text-sm text-gray-500 flex items-center"><DollarSign className="h-4 w-4 mr-1" /> Tổng tiền</p>
-            <p className="text-2xl font-semibold text-blue-600 mt-1">{formatVND(period.totalAmount)}</p>
+          <div className="bg-white border border-slate-200 shadow-sm rounded-lg p-5">
+            <p className="text-sm text-slate-500 flex items-center"><DollarSign className="h-4 w-4 mr-1" /> Tổng tiền</p>
+            <p className="text-xl font-bold tracking-tight text-brand-600 mt-1">{formatVND(period.totalAmount)}</p>
           </div>
         </div>
 
         {showAdj && isDraft && (
           <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-            <h3 className="text-md font-medium text-gray-900 mb-4">Thêm khoản cộng/trừ (thưởng, phạt, điều chỉnh)</h3>
+            <h3 className="text-md font-medium text-slate-900 mb-4">Thêm khoản cộng/trừ (thưởng, phạt, điều chỉnh)</h3>
             <form onSubmit={addAdjustment} className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
-                <label className="block text-sm text-gray-700">Số tiền * (âm = trừ)</label>
+                <label className="block text-sm text-slate-700">Số tiền * (âm = trừ)</label>
                 <input type="number" required value={adjForm.amount}
                   onChange={(e) => setAdjForm({ ...adjForm, amount: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm" />
+                  className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" />
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-sm text-gray-700">Mô tả</label>
+                <label className="block text-sm text-slate-700">Mô tả</label>
                 <input type="text" value={adjForm.description}
                   onChange={(e) => setAdjForm({ ...adjForm, description: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm" />
+                  className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" />
               </div>
               <div className="sm:col-span-3 flex gap-2">
-                <button type="submit" className="px-4 py-2 bg-yellow-600 text-white rounded-md text-sm hover:bg-yellow-700">Thêm</button>
-                <button type="button" onClick={() => setShowAdj(false)} className="px-4 py-2 border border-gray-300 rounded-md text-sm">Hủy</button>
+                <button type="submit" className="px-4 py-2 bg-yellow-600 text-white rounded-lg text-sm hover:bg-yellow-700">Thêm</button>
+                <button type="button" onClick={() => setShowAdj(false)} className="px-4 py-2 border border-slate-300 rounded-lg text-sm">Hủy</button>
               </div>
             </form>
           </div>
@@ -205,35 +205,35 @@ export default function PayrollDetailPage({ params }: { params: Promise<{ id: st
 
         {/* Items */}
         <div className="mt-8">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Chi tiết</h2>
-          <div className="bg-white shadow overflow-hidden sm:rounded-md">
+          <h2 className="text-base font-semibold text-slate-900 mb-4">Chi tiết</h2>
+          <div className="bg-white border border-slate-200 shadow-sm overflow-hidden sm:rounded-xl">
             {period.items.length === 0 ? (
-              <p className="text-center py-8 text-sm text-gray-500">Không có mục nào trong kỳ này</p>
+              <p className="text-center py-8 text-sm text-slate-500">Không có mục nào trong kỳ này</p>
             ) : (
-              <ul className="divide-y divide-gray-200">
+              <ul className="divide-y divide-slate-200">
                 {period.items.map((item) => (
                   <li key={item.id} className="px-4 py-4 sm:px-6 flex items-center justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${TYPE_LABELS[item.type]?.color || 'bg-gray-100'}`}>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${TYPE_LABELS[item.type]?.color || 'bg-slate-100'}`}>
                           {TYPE_LABELS[item.type]?.label || item.type}
                         </span>
-                        <span className="text-sm text-gray-900">{formatDate(item.date)}</span>
+                        <span className="text-sm text-slate-900">{formatDate(item.date)}</span>
                         {item.session && (
-                          <span className="text-xs text-gray-500">Lớp {item.session.class.code}</span>
+                          <span className="text-xs text-slate-500">Lớp {item.session.class.code}</span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-sm text-slate-500 mt-1">
                         {item.description || ''}
                         {item.hours > 0 && ` • ${item.hours.toFixed(1)}h × ${formatVND(item.rate)}`}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className={`text-sm font-semibold ${item.amount < 0 ? 'text-red-600' : 'text-gray-900'}`}>
+                      <span className={`text-sm font-semibold ${item.amount < 0 ? 'text-red-600' : 'text-slate-900'}`}>
                         {item.amount < 0 ? '-' : ''}{formatVND(Math.abs(item.amount))}
                       </span>
                       {isDraft && (
-                        <button onClick={() => deleteItem(item.id)} className="text-gray-400 hover:text-red-500">
+                        <button onClick={() => deleteItem(item.id)} className="text-slate-400 hover:text-red-500">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       )}

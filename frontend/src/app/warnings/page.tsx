@@ -74,11 +74,11 @@ export default function WarningsPage() {
     const colors: Record<string, string> = {
       new: 'bg-red-100 text-red-800',
       processing: 'bg-yellow-100 text-yellow-800',
-      contacted: 'bg-blue-100 text-blue-800',
+      contacted: 'bg-brand-100 text-brand-800',
       resolved: 'bg-green-100 text-green-800',
-      closed: 'bg-gray-100 text-gray-800',
+      closed: 'bg-slate-100 text-slate-800',
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return colors[status] || 'bg-slate-100 text-slate-800';
   };
 
   const getStatusLabel = (status: string) => {
@@ -95,24 +95,24 @@ export default function WarningsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="py-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+    <div>
+      <div className="max-w-7xl mx-auto">
         <div className="md:flex md:items-center md:justify-between">
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-semibold text-gray-900">Cảnh báo học tập</h1>
-            <p className="text-sm text-gray-500">Theo dõi học viên có nguy cơ</p>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">Cảnh báo học tập</h1>
+            <p className="text-sm text-slate-500">Theo dõi học viên có nguy cơ</p>
           </div>
           <div className="mt-4 flex md:mt-0 md:ml-4">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="border border-gray-300 rounded-md py-2 px-3 text-sm"
+              className="border border-slate-300 rounded-lg py-2 px-3 text-sm"
             >
               <option value="">Tất cả trạng thái</option>
               <option value="new">Mới</option>
@@ -125,8 +125,8 @@ export default function WarningsPage() {
         </div>
 
         {/* Warnings List */}
-        <div className="mt-6 bg-white shadow overflow-hidden sm:rounded-md">
-          <ul className="divide-y divide-gray-200">
+        <div className="mt-6 bg-white border border-slate-200 shadow-sm overflow-hidden sm:rounded-xl">
+          <ul className="divide-y divide-slate-200">
             {warnings.map((warning) => (
               <li key={warning.id} className="px-4 py-4">
                 <div className="flex items-start justify-between">
@@ -146,18 +146,18 @@ export default function WarningsPage() {
                     </div>
                     <div className="ml-3">
                       <div
-                        className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600"
+                        className="text-sm font-medium text-slate-900 cursor-pointer hover:text-brand-600"
                         onClick={() => router.push(`/students/${warning.student.id}`)}
                       >
                         {warning.student.name}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-slate-500">
                         {warning.student.code} • {getTypeLabel(warning.type)}
                       </div>
                       {warning.details && (
-                        <div className="text-sm text-gray-600 mt-1">{warning.details}</div>
+                        <div className="text-sm text-slate-600 mt-1">{warning.details}</div>
                       )}
-                      <div className="text-xs text-gray-400 mt-1 flex items-center">
+                      <div className="text-xs text-slate-400 mt-1 flex items-center">
                         <Clock className="h-3 w-3 mr-1" />
                         {new Date(warning.createdAt).toLocaleDateString('vi-VN')}
                         {warning.resolvedAt && ` • Giải quyết ${new Date(warning.resolvedAt).toLocaleDateString('vi-VN')}`}
@@ -171,7 +171,7 @@ export default function WarningsPage() {
                     {warning.status === 'new' && (
                       <button
                         onClick={() => updateStatus(warning.id, 'processing')}
-                        className="text-xs px-2 py-1 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
+                        className="text-xs px-2 py-1 border border-slate-300 rounded text-slate-700 hover:bg-slate-50"
                       >
                         Xử lý
                       </button>
@@ -179,7 +179,7 @@ export default function WarningsPage() {
                     {warning.status === 'processing' && (
                       <button
                         onClick={() => updateStatus(warning.id, 'contacted')}
-                        className="text-xs px-2 py-1 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 flex items-center"
+                        className="text-xs px-2 py-1 border border-slate-300 rounded text-slate-700 hover:bg-slate-50 flex items-center"
                       >
                         <Phone className="h-3 w-3 mr-1" />
                         Đã liên hệ
@@ -202,10 +202,10 @@ export default function WarningsPage() {
         </div>
 
         {warnings.length === 0 && (
-          <div className="text-center py-12 bg-white rounded-md shadow mt-6">
+          <div className="text-center py-12 bg-white rounded-xl border border-slate-200 shadow-sm mt-6">
             <CheckCircle className="mx-auto h-12 w-12 text-green-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">Không có cảnh báo nào</h3>
-            <p className="mt-1 text-sm text-gray-500">Tất cả học viên đều ổn.</p>
+            <h3 className="mt-2 text-sm font-medium text-slate-900">Không có cảnh báo nào</h3>
+            <p className="mt-1 text-sm text-slate-500">Tất cả học viên đều ổn.</p>
           </div>
         )}
       </div>

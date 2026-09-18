@@ -58,7 +58,7 @@ const attendanceStatuses = [
   { value: 'present', label: 'Có mặt', color: 'bg-green-100 text-green-800 border-green-300' },
   { value: 'late', label: 'Đi muộn', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
   { value: 'early_leave', label: 'Về sớm', color: 'bg-orange-100 text-orange-800 border-orange-300' },
-  { value: 'excused_absent', label: 'Vắng có phép', color: 'bg-blue-100 text-blue-800 border-blue-300' },
+  { value: 'excused_absent', label: 'Vắng có phép', color: 'bg-brand-100 text-brand-800 border-brand-300' },
   { value: 'unexcused_absent', label: 'Vắng không phép', color: 'bg-red-100 text-red-800 border-red-300' },
 ];
 
@@ -204,7 +204,7 @@ export default function SessionDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
       </div>
     );
   }
@@ -212,10 +212,10 @@ export default function SessionDetailPage() {
   if (!session) {
     return (
       <div className="text-center py-12">
-        <h3 className="text-sm font-medium text-gray-900">Session không tồn tại</h3>
+        <h3 className="text-sm font-medium text-slate-900">Session không tồn tại</h3>
         <button
           onClick={() => router.push('/sessions')}
-          className="mt-4 inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+          className="mt-4 inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Quay lại
@@ -225,7 +225,7 @@ export default function SessionDetailPage() {
   }
 
   return (
-    <div className="py-6">
+    <div>
       <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-8">
         {/* Header */}
         <div className="mb-6">
@@ -233,15 +233,15 @@ export default function SessionDetailPage() {
             <div className="flex items-center">
               <button
                 onClick={() => router.push('/sessions')}
-                className="mr-4 p-2 text-gray-400 hover:text-gray-600"
+                className="mr-4 p-2 text-slate-400 hover:text-slate-600"
               >
                 <ArrowLeft className="h-5 w-5" />
               </button>
               <div>
-                <h1 className="text-2xl font-semibold text-gray-900">
+                <h1 className="text-xl font-bold tracking-tight text-slate-900">
                   {session.class.code} — {session.class.course.name}
                 </h1>
-                <p className="text-sm text-gray-500 flex items-center space-x-3 mt-1">
+                <p className="text-sm text-slate-500 flex items-center space-x-3 mt-1">
                   <span className="flex items-center">
                     <Clock className="h-4 w-4 mr-1" />
                     {new Date(session.date).toLocaleDateString('vi-VN')} {session.startTime}-{session.endTime}
@@ -255,7 +255,7 @@ export default function SessionDetailPage() {
                       href={session.meetingLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center text-blue-600 hover:underline"
+                      className="flex items-center text-brand-600 hover:underline"
                     >
                       <Video className="h-4 w-4 mr-1" />
                       Meeting
@@ -274,48 +274,48 @@ export default function SessionDetailPage() {
         </div>
 
         {/* Session Info Form */}
-        <div className="bg-white shadow sm:rounded-lg p-6 mb-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+        <div className="bg-white border border-slate-200 shadow-sm sm:rounded-lg p-6 mb-6">
+          <h3 className="text-base font-semibold text-slate-900 mb-4 flex items-center">
             <BookOpen className="mr-2 h-5 w-5" />
             Thông tin buổi học
           </h3>
           {session.plannedContent && (
-            <p className="text-sm text-gray-500 mb-4">Nội dung dự kiến: {session.plannedContent}</p>
+            <p className="text-sm text-slate-500 mb-4">Nội dung dự kiến: {session.plannedContent}</p>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Nội dung thực dạy</label>
+              <label className="block text-sm font-medium text-slate-700">Nội dung thực dạy</label>
               <input
                 type="text"
                 value={sessionInfo.actualContent}
                 onChange={(e) => setSessionInfo({ ...sessionInfo, actualContent: e.target.value })}
-                className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
+                className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Bài tập về nhà</label>
+              <label className="block text-sm font-medium text-slate-700">Bài tập về nhà</label>
               <input
                 type="text"
                 value={sessionInfo.homework}
                 onChange={(e) => setSessionInfo({ ...sessionInfo, homework: e.target.value })}
-                className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
+                className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Ghi chú</label>
+              <label className="block text-sm font-medium text-slate-700">Ghi chú</label>
               <input
                 type="text"
                 value={sessionInfo.notes}
                 onChange={(e) => setSessionInfo({ ...sessionInfo, notes: e.target.value })}
-                className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
+                className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Trạng thái</label>
+              <label className="block text-sm font-medium text-slate-700">Trạng thái</label>
               <select
                 value={sessionInfo.status}
                 onChange={(e) => setSessionInfo({ ...sessionInfo, status: e.target.value })}
-                className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
+                className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
               >
                 <option value="planned">Dự kiến</option>
                 <option value="taught">Đã dạy</option>
@@ -329,7 +329,7 @@ export default function SessionDetailPage() {
             <button
               onClick={saveSessionInfo}
               disabled={saving}
-              className="inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+              className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-50"
             >
               <Save className="mr-2 h-4 w-4" />
               Lưu thông tin
@@ -338,19 +338,19 @@ export default function SessionDetailPage() {
         </div>
 
         {/* Attendance */}
-        <div className="bg-white shadow sm:rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h3 className="text-lg font-medium text-gray-900">
+        <div className="bg-white border border-slate-200 shadow-sm sm:rounded-lg">
+          <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+            <h3 className="text-base font-semibold text-slate-900">
               Điểm danh ({session.class.classMembers.length} học viên)
             </h3>
             <button
               onClick={() => markAll('present')}
-              className="text-sm text-blue-600 hover:underline"
+              className="text-sm text-brand-600 hover:underline"
             >
               Tất cả có mặt
             </button>
           </div>
-          <ul className="divide-y divide-gray-200">
+          <ul className="divide-y divide-slate-200">
             {session.class.classMembers.map((member) => {
               const record = attendanceMap[member.student.id];
               if (!record) return null;
@@ -358,8 +358,8 @@ export default function SessionDetailPage() {
                 <li key={member.id} className="px-6 py-4">
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{member.student.name}</div>
-                      <div className="text-xs text-gray-500">{member.student.code}</div>
+                      <div className="text-sm font-medium text-slate-900">{member.student.name}</div>
+                      <div className="text-xs text-slate-500">{member.student.code}</div>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {attendanceStatuses.map((st) => (
@@ -369,10 +369,10 @@ export default function SessionDetailPage() {
                             ...attendanceMap,
                             [member.student.id]: { ...record, status: st.value },
                           })}
-                          className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                             record.status === st.value
                               ? st.color + ' ring-1 ring-current'
-                              : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                              : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
                           }`}
                         >
                           {st.label}
@@ -389,18 +389,18 @@ export default function SessionDetailPage() {
                         ...attendanceMap,
                         [member.student.id]: { ...record, notes: e.target.value },
                       })}
-                      className="mt-2 block w-full md:w-1/2 border border-gray-300 rounded-md py-1.5 px-3 text-sm"
+                      className="mt-2 block w-full md:w-1/2 border border-slate-300 rounded-lg py-1.5 px-3 text-sm"
                     />
                   )}
                 </li>
               );
             })}
           </ul>
-          <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
+          <div className="px-6 py-4 border-t border-slate-200 flex justify-end">
             <button
               onClick={saveAttendance}
               disabled={saving}
-              className="inline-flex items-center px-6 py-2.5 rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+              className="inline-flex items-center px-6 py-2.5 rounded-lg text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
             >
               <CheckCircle className="mr-2 h-4 w-4" />
               {saving ? 'Đang lưu...' : 'Lưu điểm danh'}
@@ -409,19 +409,19 @@ export default function SessionDetailPage() {
         </div>
 
         {/* Scores & Comments */}
-        <div className="bg-white shadow sm:rounded-lg mt-6">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Điểm & Nhận xét</h3>
+        <div className="bg-white border border-slate-200 shadow-sm sm:rounded-lg mt-6">
+          <div className="px-6 py-4 border-b border-slate-200">
+            <h3 className="text-base font-semibold text-slate-900">Điểm & Nhận xét</h3>
           </div>
-          <ul className="divide-y divide-gray-200">
+          <ul className="divide-y divide-slate-200">
             {session.class.classMembers.map((member) => {
               const p = progressMap[member.student.id] || { testScore: '', completionRate: '', teacherComment: '' };
               return (
                 <li key={member.id} className="px-6 py-4">
                   <div className="flex flex-col md:flex-row md:items-center gap-3">
                     <div className="md:w-48">
-                      <div className="text-sm font-medium text-gray-900">{member.student.name}</div>
-                      <div className="text-xs text-gray-500">{member.student.code}</div>
+                      <div className="text-sm font-medium text-slate-900">{member.student.name}</div>
+                      <div className="text-xs text-slate-500">{member.student.code}</div>
                     </div>
                     <div className="flex flex-1 flex-wrap items-center gap-2">
                       <input
@@ -431,7 +431,7 @@ export default function SessionDetailPage() {
                           ...progressMap,
                           [member.student.id]: { ...p, testScore: e.target.value },
                         })}
-                        className="w-20 border border-gray-300 rounded-md py-1.5 px-2 text-sm"
+                        className="w-20 border border-slate-300 rounded-lg py-1.5 px-2 text-sm"
                       />
                       <input
                         type="number" min="0" max="100" placeholder="% HT"
@@ -440,7 +440,7 @@ export default function SessionDetailPage() {
                           ...progressMap,
                           [member.student.id]: { ...p, completionRate: e.target.value },
                         })}
-                        className="w-20 border border-gray-300 rounded-md py-1.5 px-2 text-sm"
+                        className="w-20 border border-slate-300 rounded-lg py-1.5 px-2 text-sm"
                       />
                       <input
                         type="text" placeholder="Nhận xét của giáo viên..."
@@ -449,12 +449,12 @@ export default function SessionDetailPage() {
                           ...progressMap,
                           [member.student.id]: { ...p, teacherComment: e.target.value },
                         })}
-                        className="flex-1 min-w-40 border border-gray-300 rounded-md py-1.5 px-3 text-sm"
+                        className="flex-1 min-w-40 border border-slate-300 rounded-lg py-1.5 px-3 text-sm"
                       />
                       <button
                         onClick={() => saveProgress(member.student.id)}
                         disabled={savingProgress === member.student.id}
-                        className="px-3 py-1.5 rounded-md text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-50"
                       >
                         {savingProgress === member.student.id ? 'Lưu...' : 'Lưu'}
                       </button>

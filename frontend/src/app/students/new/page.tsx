@@ -107,30 +107,30 @@ export default function CreateStudentPage() {
   ];
 
   return (
-    <div className="py-6">
+    <div>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center">
             <button
               onClick={() => router.push('/students')}
-              className="mr-4 p-2 text-gray-400 hover:text-gray-600"
+              className="mr-4 p-2 text-slate-400 hover:text-slate-600"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900">Thêm Học viên mới</h1>
-              <p className="text-sm text-gray-500">Tạo hồ sơ học viên</p>
+              <h1 className="text-xl font-bold tracking-tight text-slate-900">Thêm Học viên mới</h1>
+              <p className="text-sm text-slate-500">Tạo hồ sơ học viên</p>
             </div>
           </div>
         </div>
 
         {/* Form */}
-        <div className="bg-white shadow sm:rounded-lg">
+        <div className="bg-white border border-slate-200 shadow-sm sm:rounded-lg">
           <form onSubmit={handleSubmit} className="space-y-6 p-6">
             {/* Duplicate Warning */}
             {duplicateWarning && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                 <div className="flex">
                   <AlertCircle className="h-5 w-5 text-yellow-400" />
                   <div className="ml-3">
@@ -145,13 +145,13 @@ export default function CreateStudentPage() {
 
             {/* Basic Information */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+              <h3 className="text-base font-semibold text-slate-900 mb-4 flex items-center">
                 <User className="mr-2 h-5 w-5" />
                 Thông tin cơ bản
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-slate-700">
                     Họ tên *
                   </label>
                   <input
@@ -160,12 +160,12 @@ export default function CreateStudentPage() {
                     required
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full border border-slate-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-slate-700">
                     Điện thoại *
                   </label>
                   <input
@@ -174,12 +174,12 @@ export default function CreateStudentPage() {
                     required
                     value={formData.phone}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full border border-slate-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-slate-700">
                     Email
                   </label>
                   <input
@@ -187,12 +187,12 @@ export default function CreateStudentPage() {
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full border border-slate-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-slate-700">
                     Ngày sinh
                   </label>
                   <input
@@ -200,19 +200,19 @@ export default function CreateStudentPage() {
                     name="birthDate"
                     value={formData.birthDate}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full border border-slate-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-slate-700">
                     Giới tính
                   </label>
                   <select
                     name="gender"
                     value={formData.gender}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full border border-slate-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
                   >
                     <option value="">Chọn giới tính</option>
                     <option value="male">Nam</option>
@@ -222,7 +222,7 @@ export default function CreateStudentPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-slate-700">
                     Địa chỉ
                   </label>
                   <input
@@ -230,7 +230,7 @@ export default function CreateStudentPage() {
                     name="address"
                     value={formData.address}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full border border-slate-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
                   />
                 </div>
               </div>
@@ -238,13 +238,13 @@ export default function CreateStudentPage() {
 
             {/* Emergency Contact */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+              <h3 className="text-base font-semibold text-slate-900 mb-4 flex items-center">
                 <Phone className="mr-2 h-5 w-5" />
                 Liên hệ khẩn cấp
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-slate-700">
                     Tên người liên hệ
                   </label>
                   <input
@@ -252,12 +252,12 @@ export default function CreateStudentPage() {
                     name="emergencyContact"
                     value={formData.emergencyContact}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full border border-slate-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-slate-700">
                     Số điện thoại
                   </label>
                   <input
@@ -265,7 +265,7 @@ export default function CreateStudentPage() {
                     name="emergencyPhone"
                     value={formData.emergencyPhone}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full border border-slate-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
                   />
                 </div>
               </div>
@@ -273,20 +273,20 @@ export default function CreateStudentPage() {
 
             {/* Education & Goals */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+              <h3 className="text-base font-semibold text-slate-900 mb-4 flex items-center">
                 <BookOpen className="mr-2 h-5 w-5" />
                 Học vấn & Mục tiêu
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-slate-700">
                     Trình độ đầu vào
                   </label>
                   <select
                     name="educationLevel"
                     value={formData.educationLevel}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full border border-slate-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
                   >
                     <option value="">Chọn trình độ</option>
                     {educationLevels.map(level => (
@@ -298,7 +298,7 @@ export default function CreateStudentPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-slate-700">
                     Mục tiêu đầu ra
                   </label>
                   <input
@@ -306,12 +306,12 @@ export default function CreateStudentPage() {
                     name="goal"
                     value={formData.goal}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full border border-slate-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-slate-700">
                     Khung giờ làm việc
                   </label>
                   <input
@@ -320,12 +320,12 @@ export default function CreateStudentPage() {
                     value={formData.workSchedule}
                     onChange={handleInputChange}
                     placeholder="Ví dụ: Sáng 8-12h, Chiều 13-17h"
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full border border-slate-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-slate-700">
                     Nhu cầu hỗ trợ
                   </label>
                   <input
@@ -333,7 +333,7 @@ export default function CreateStudentPage() {
                     name="supportNeeds"
                     value={formData.supportNeeds}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full border border-slate-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
                   />
                 </div>
               </div>
@@ -341,13 +341,13 @@ export default function CreateStudentPage() {
 
             {/* Additional Info */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+              <h3 className="text-base font-semibold text-slate-900 mb-4 flex items-center">
                 <Users className="mr-2 h-5 w-5" />
                 Thông tin bổ sung
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-slate-700">
                     Người giới thiệu
                   </label>
                   <input
@@ -355,7 +355,7 @@ export default function CreateStudentPage() {
                     name="referredBy"
                     value={formData.referredBy}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full border border-slate-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
                   />
                 </div>
               </div>
@@ -363,7 +363,7 @@ export default function CreateStudentPage() {
 
             {/* Notes */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-slate-700">
                 Thông tin cần lưu ý
               </label>
               <textarea
@@ -371,7 +371,7 @@ export default function CreateStudentPage() {
                 rows={3}
                 value={formData.notes}
                 onChange={handleInputChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full border border-slate-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
                 placeholder="Ghi chú thêm về học viên..."
               />
             </div>
@@ -381,14 +381,14 @@ export default function CreateStudentPage() {
               <button
                 type="button"
                 onClick={() => router.push('/students')}
-                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                className="px-4 py-2 border border-slate-300 rounded-lg shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50"
               >
                 Hủy
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-50"
               >
                 <Save className="-ml-1 mr-2 h-4 w-4" />
                 {loading ? 'Đang lưu...' : 'Lưu Học viên'}

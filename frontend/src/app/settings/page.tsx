@@ -38,12 +38,12 @@ export default function SettingsPage() {
   }, []);
 
   if (isAdmin === null) {
-    return <p className="text-center py-8 text-sm text-gray-500">Đang tải...</p>;
+    return <p className="text-center py-8 text-sm text-slate-500">Đang tải...</p>;
   }
 
   if (!isAdmin) {
     return (
-      <div className="py-6 max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+      <div className="py-6 max-w-7xl mx-auto">
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
           <p className="text-yellow-800 font-medium">Bạn không có quyền truy cập trang này</p>
           <p className="text-sm text-yellow-600 mt-1">Chỉ tài khoản Quản trị viên mới xem được cấu hình hệ thống.</p>
@@ -53,16 +53,16 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="py-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-        <h1 className="text-2xl font-semibold text-gray-900">Hệ thống</h1>
+    <div>
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-xl font-bold tracking-tight text-slate-900">Hệ thống</h1>
 
-        <div className="mt-6 border-b border-gray-200">
+        <div className="mt-6 border-b border-slate-200">
           <nav className="-mb-px flex space-x-6 overflow-x-auto">
             {TABS.map((t) => (
               <button key={t.id} onClick={() => setTab(t.id)}
                 className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center ${
-                  tab === t.id ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+                  tab === t.id ? 'border-brand-500 text-brand-600' : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}>
                 <t.icon className="h-4 w-4 mr-1.5" /> {t.name}
               </button>
@@ -134,14 +134,14 @@ function UsersTab() {
     fetchUsers();
   };
 
-  if (loading) return <p className="text-center py-8 text-sm text-gray-500">Đang tải...</p>;
+  if (loading) return <p className="text-center py-8 text-sm text-slate-500">Đang tải...</p>;
 
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <p className="text-sm text-gray-600">{users.length} người dùng</p>
+        <p className="text-sm text-slate-600">{users.length} người dùng</p>
         <button onClick={() => setShowForm(!showForm)}
-          className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+          className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-brand-600 rounded-lg hover:bg-brand-700">
           <Plus className="h-4 w-4 mr-1" /> Tạo tài khoản
         </button>
       </div>
@@ -149,34 +149,34 @@ function UsersTab() {
       {error && <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">{error}</div>}
 
       {showForm && (
-        <form onSubmit={createUser} className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <form onSubmit={createUser} className="mb-6 bg-brand-50 border border-brand-200 rounded-lg p-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-xs text-gray-600">Email *</label>
+            <label className="block text-xs text-slate-600">Email *</label>
             <input type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm" />
+              className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" />
           </div>
           <div>
-            <label className="block text-xs text-gray-600">Họ tên *</label>
+            <label className="block text-xs text-slate-600">Họ tên *</label>
             <input type="text" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm" />
+              className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" />
           </div>
           <div>
-            <label className="block text-xs text-gray-600">Điện thoại</label>
+            <label className="block text-xs text-slate-600">Điện thoại</label>
             <input type="text" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm" />
+              className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" />
           </div>
           <div>
-            <label className="block text-xs text-gray-600">Mật khẩu * (≥6 ký tự)</label>
+            <label className="block text-xs text-slate-600">Mật khẩu * (≥6 ký tự)</label>
             <input type="password" required minLength={6} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm" />
+              className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" />
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-xs text-gray-600 mb-1">Vai trò *</label>
+            <label className="block text-xs text-slate-600 mb-1">Vai trò *</label>
             <div className="flex flex-wrap gap-2">
               {ALL_ROLES.map(r => (
                 <button type="button" key={r} onClick={() => toggleRole(r)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium ${
-                    form.roles.includes(r) ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 text-gray-700'
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
+                    form.roles.includes(r) ? 'bg-brand-600 text-white' : 'bg-white border border-slate-300 text-slate-700'
                   }`}>
                   {ROLE_LABELS[r]}
                 </button>
@@ -185,30 +185,30 @@ function UsersTab() {
           </div>
           <div className="sm:col-span-2 flex gap-2">
             <button type="submit" disabled={form.roles.length === 0}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm disabled:opacity-50">Tạo</button>
-            <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 border border-gray-300 rounded-md text-sm">Hủy</button>
+              className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm disabled:opacity-50">Tạo</button>
+            <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 border border-slate-300 rounded-lg text-sm">Hủy</button>
           </div>
         </form>
       )}
 
-      <div className="bg-white shadow overflow-hidden sm:rounded-md">
-        <ul className="divide-y divide-gray-200">
+      <div className="bg-white border border-slate-200 shadow-sm overflow-hidden sm:rounded-xl">
+        <ul className="divide-y divide-slate-200">
           {users.map((u) => (
             <li key={u.id} className="px-4 py-4 sm:px-6 flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-900">{u.name}</span>
+                  <span className="text-sm font-medium text-slate-900">{u.name}</span>
                   {u.roles.map((r: string) => (
-                    <span key={r} className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <span key={r} className="px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800">
                       {ROLE_LABELS[r] || r}
                     </span>
                   ))}
-                  {!u.isActive && <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-500">Vô hiệu</span>}
+                  {!u.isActive && <span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-500">Vô hiệu</span>}
                 </div>
-                <p className="text-sm text-gray-500 mt-1">{u.email}{u.phone && ` • ${u.phone}`}</p>
+                <p className="text-sm text-slate-500 mt-1">{u.email}{u.phone && ` • ${u.phone}`}</p>
               </div>
               <button onClick={() => toggleActive(u)}
-                className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md ${
+                className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg ${
                   u.isActive ? 'text-red-700 bg-red-50 hover:bg-red-100' : 'text-green-700 bg-green-50 hover:bg-green-100'
                 }`}>
                 {u.isActive ? <><EyeOff className="h-4 w-4 mr-1" /> Vô hiệu</> : <><Eye className="h-4 w-4 mr-1" /> Kích hoạt</>}
@@ -232,20 +232,20 @@ function RolesTab() {
       .then(r => r.json()).then(d => { setRoles(d.data || []); setLoading(false); });
   }, []);
 
-  if (loading) return <p className="text-center py-8 text-sm text-gray-500">Đang tải...</p>;
+  if (loading) return <p className="text-center py-8 text-sm text-slate-500">Đang tải...</p>;
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {roles.map((r) => (
-        <div key={r.id} className="bg-white shadow rounded-lg p-5">
+        <div key={r.id} className="bg-white border border-slate-200 shadow-sm rounded-lg p-5">
           <div className="flex items-center justify-between">
-            <h3 className="text-md font-medium text-gray-900">{r.displayName}</h3>
-            <span className="text-xs text-gray-500">{r.userCount} người</span>
+            <h3 className="text-md font-medium text-slate-900">{r.displayName}</h3>
+            <span className="text-xs text-slate-500">{r.userCount} người</span>
           </div>
-          <p className="text-xs text-gray-500 mt-1">{r.description}</p>
+          <p className="text-xs text-slate-500 mt-1">{r.description}</p>
           <div className="mt-3 flex flex-wrap gap-1">
             {r.permissions.map((p: string) => (
-              <span key={p} className="px-1.5 py-0.5 rounded text-xs bg-gray-100 text-gray-600">{p}</span>
+              <span key={p} className="px-1.5 py-0.5 rounded text-xs bg-slate-100 text-slate-600">{p}</span>
             ))}
           </div>
         </div>
@@ -302,78 +302,78 @@ function StatusesTab() {
     fetchStatuses();
   };
 
-  if (loading) return <p className="text-center py-8 text-sm text-gray-500">Đang tải...</p>;
+  if (loading) return <p className="text-center py-8 text-sm text-slate-500">Đang tải...</p>;
 
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
         <select value={moduleFilter} onChange={(e) => setModuleFilter(e.target.value)}
-          className="border border-gray-300 rounded-md px-3 py-1.5 text-sm">
+          className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm">
           <option value="">Tất cả modules</option>
           {modules.map(m => <option key={m} value={m}>{m}</option>)}
         </select>
         <button onClick={() => setShowForm(!showForm)}
-          className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+          className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-brand-600 rounded-lg hover:bg-brand-700">
           <Plus className="h-4 w-4 mr-1" /> Thêm status
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={createStatus} className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 grid grid-cols-2 gap-4 sm:grid-cols-5">
+        <form onSubmit={createStatus} className="mb-6 bg-brand-50 border border-brand-200 rounded-lg p-4 grid grid-cols-2 gap-4 sm:grid-cols-5">
           <div>
-            <label className="block text-xs text-gray-600">Module</label>
+            <label className="block text-xs text-slate-600">Module</label>
             <select value={form.module} onChange={(e) => setForm({ ...form, module: e.target.value })}
-              className="mt-1 block w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm">
+              className="mt-1 block w-full border border-slate-300 rounded-lg px-2 py-1.5 text-sm">
               {modules.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs text-gray-600">Status key *</label>
+            <label className="block text-xs text-slate-600">Status key *</label>
             <input type="text" required value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}
-              className="mt-1 block w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm" placeholder="vd: vip" />
+              className="mt-1 block w-full border border-slate-300 rounded-lg px-2 py-1.5 text-sm" placeholder="vd: vip" />
           </div>
           <div>
-            <label className="block text-xs text-gray-600">Tên hiển thị *</label>
+            <label className="block text-xs text-slate-600">Tên hiển thị *</label>
             <input type="text" required value={form.displayName} onChange={(e) => setForm({ ...form, displayName: e.target.value })}
-              className="mt-1 block w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm" />
+              className="mt-1 block w-full border border-slate-300 rounded-lg px-2 py-1.5 text-sm" />
           </div>
           <div>
-            <label className="block text-xs text-gray-600">Màu</label>
+            <label className="block text-xs text-slate-600">Màu</label>
             <input type="color" value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })}
-              className="mt-1 block w-full h-8 border border-gray-300 rounded-md" />
+              className="mt-1 block w-full h-8 border border-slate-300 rounded-lg" />
           </div>
           <div className="flex items-end">
-            <button type="submit" className="px-4 py-1.5 bg-blue-600 text-white rounded-md text-sm">Thêm</button>
+            <button type="submit" className="px-4 py-1.5 bg-brand-600 text-white rounded-lg text-sm">Thêm</button>
           </div>
         </form>
       )}
 
-      <div className="bg-white shadow overflow-hidden sm:rounded-md">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="bg-white border border-slate-200 shadow-sm overflow-hidden sm:rounded-xl">
+        <table className="min-w-full divide-y divide-slate-200">
+          <thead className="bg-slate-50">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Module</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Status</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Tên hiển thị</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Loại</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Hiển thị</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Module</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Tên hiển thị</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Loại</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Hiển thị</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-slate-200">
             {statuses.map((s) => (
               <tr key={s.id} className={!s.isActive ? 'opacity-50' : ''}>
-                <td className="px-4 py-3 text-sm text-gray-600">{s.module}</td>
-                <td className="px-4 py-3 text-sm font-mono text-gray-900">{s.status}</td>
-                <td className="px-4 py-3 text-sm text-gray-900">
+                <td className="px-4 py-3 text-sm text-slate-600">{s.module}</td>
+                <td className="px-4 py-3 text-sm font-mono text-slate-900">{s.status}</td>
+                <td className="px-4 py-3 text-sm text-slate-900">
                   <span className="inline-flex items-center gap-1.5">
                     {s.color && <span className="w-3 h-3 rounded-full" style={{ backgroundColor: s.color }} />}
                     {s.displayName}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-xs text-gray-500">{s.isSystem ? 'Hệ thống' : 'Tùy chỉnh'}</td>
+                <td className="px-4 py-3 text-xs text-slate-500">{s.isSystem ? 'Hệ thống' : 'Tùy chỉnh'}</td>
                 <td className="px-4 py-3">
                   <button onClick={() => toggleActive(s)}
-                    className={`text-xs font-medium ${s.isActive ? 'text-green-600' : 'text-gray-400'}`}>
+                    className={`text-xs font-medium ${s.isActive ? 'text-green-600' : 'text-slate-400'}`}>
                     {s.isActive ? 'Đang hiện' : 'Đang ẩn'}
                   </button>
                 </td>
@@ -434,20 +434,20 @@ function ImportTab() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-md font-medium text-gray-900 mb-4">Import dữ liệu từ CSV</h3>
+      <div className="bg-white border border-slate-200 shadow-sm rounded-lg p-6">
+        <h3 className="text-md font-medium text-slate-900 mb-4">Import dữ liệu từ CSV</h3>
         <div className="flex gap-4 mb-4">
           {(['leads', 'students'] as const).map(e => (
             <button key={e} onClick={() => { setEntity(e); setPreview(null); setResult(null); }}
-              className={`px-4 py-2 rounded-md text-sm font-medium ${
-                entity === e ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'
+              className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                entity === e ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-700'
               }`}>
               {e === 'leads' ? 'Leads' : 'Học viên'}
             </button>
           ))}
         </div>
 
-        <div className="bg-gray-50 rounded-md p-3 text-xs text-gray-600 mb-4">
+        <div className="bg-slate-50 rounded-lg p-3 text-xs text-slate-600 mb-4">
           <p className="font-medium mb-1">Định dạng CSV (dòng đầu = header):</p>
           <code>
             {entity === 'leads'
@@ -459,21 +459,21 @@ function ImportTab() {
 
         <div className="flex gap-3 items-center">
           <input ref={fileRef} type="file" accept=".csv,text/csv" onChange={loadFile} className="text-sm" />
-          <span className="text-sm text-gray-500">hoặc</span>
+          <span className="text-sm text-slate-500">hoặc</span>
         </div>
         <textarea
           value={csv} onChange={(e) => setCsv(e.target.value)} rows={6}
           placeholder="Dán nội dung CSV vào đây..."
-          className="mt-3 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm font-mono"
+          className="mt-3 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono"
         />
         <div className="mt-3 flex gap-2">
           <button onClick={doPreview} disabled={!csv || loading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm disabled:opacity-50">
+            className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm disabled:opacity-50">
             {loading ? 'Đang xử lý...' : 'Xem trước'}
           </button>
           {preview && preview.valid > 0 && (
             <button onClick={doCommit} disabled={loading}
-              className="px-4 py-2 bg-green-600 text-white rounded-md text-sm disabled:opacity-50">
+              className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm disabled:opacity-50">
               Import {preview.valid} dòng hợp lệ
             </button>
           )}
@@ -481,26 +481,26 @@ function ImportTab() {
       </div>
 
       {preview && (
-        <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-md font-medium text-gray-900 mb-3">
+        <div className="bg-white border border-slate-200 shadow-sm rounded-lg p-6">
+          <h3 className="text-md font-medium text-slate-900 mb-3">
             Preview: {preview.valid} hợp lệ / {preview.total} dòng
           </h3>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-slate-200 text-sm">
+              <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs text-gray-500">Dòng</th>
-                  <th className="px-3 py-2 text-left text-xs text-gray-500">Tên</th>
-                  <th className="px-3 py-2 text-left text-xs text-gray-500">SĐT</th>
-                  <th className="px-3 py-2 text-left text-xs text-gray-500">Trạng thái</th>
+                  <th className="px-3 py-2 text-left text-xs text-slate-500">Dòng</th>
+                  <th className="px-3 py-2 text-left text-xs text-slate-500">Tên</th>
+                  <th className="px-3 py-2 text-left text-xs text-slate-500">SĐT</th>
+                  <th className="px-3 py-2 text-left text-xs text-slate-500">Trạng thái</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-slate-200">
                 {preview.preview.map((p: any) => (
                   <tr key={p.row} className={!p.valid ? 'bg-red-50' : ''}>
-                    <td className="px-3 py-2 text-gray-500">{p.row}</td>
-                    <td className="px-3 py-2 text-gray-900">{p.data.name || '-'}</td>
-                    <td className="px-3 py-2 text-gray-900">{p.data.phone || '-'}</td>
+                    <td className="px-3 py-2 text-slate-500">{p.row}</td>
+                    <td className="px-3 py-2 text-slate-900">{p.data.name || '-'}</td>
+                    <td className="px-3 py-2 text-slate-900">{p.data.phone || '-'}</td>
                     <td className="px-3 py-2">
                       {p.valid ? (
                         <span className="text-green-600 flex items-center text-xs"><CheckCircle className="h-3 w-3 mr-1" /> OK</span>
@@ -552,7 +552,7 @@ function AuditTab() {
     <div>
       <div className="mb-4">
         <select value={entityFilter} onChange={(e) => setEntityFilter(e.target.value)}
-          className="border border-gray-300 rounded-md px-3 py-1.5 text-sm">
+          className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm">
           <option value="">Tất cả entities</option>
           {['user', 'lead', 'student', 'payment', 'status', 'setting', 'import'].map(e => (
             <option key={e} value={e}>{e}</option>
@@ -560,26 +560,26 @@ function AuditTab() {
         </select>
       </div>
 
-      <div className="bg-white shadow overflow-hidden sm:rounded-md">
+      <div className="bg-white border border-slate-200 shadow-sm overflow-hidden sm:rounded-xl">
         {loading ? (
-          <p className="text-center py-8 text-sm text-gray-500">Đang tải...</p>
+          <p className="text-center py-8 text-sm text-slate-500">Đang tải...</p>
         ) : logs.length === 0 ? (
-          <p className="text-center py-8 text-sm text-gray-500">Chưa có audit log nào</p>
+          <p className="text-center py-8 text-sm text-slate-500">Chưa có audit log nào</p>
         ) : (
-          <ul className="divide-y divide-gray-200">
+          <ul className="divide-y divide-slate-200">
             {logs.map((log) => (
               <li key={log.id} className="px-4 py-3 sm:px-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-sm font-medium text-gray-900">
+                    <span className="text-sm font-medium text-slate-900">
                       {log.user?.name || log.userId.slice(0, 8)}
                     </span>
-                    <span className="text-sm text-gray-600 ml-2">
+                    <span className="text-sm text-slate-600 ml-2">
                       {log.action} {log.entity}
                     </span>
-                    <span className="text-xs text-gray-400 ml-2 font-mono">{log.entityId.slice(0, 8)}</span>
+                    <span className="text-xs text-slate-400 ml-2 font-mono">{log.entityId.slice(0, 8)}</span>
                   </div>
-                  <span className="text-xs text-gray-400">{new Date(log.createdAt).toLocaleString('vi-VN')}</span>
+                  <span className="text-xs text-slate-400">{new Date(log.createdAt).toLocaleString('vi-VN')}</span>
                 </div>
               </li>
             ))}
@@ -631,30 +631,30 @@ function SettingsTab() {
     }
   };
 
-  if (loading) return <p className="text-center py-8 text-sm text-gray-500">Đang tải...</p>;
+  if (loading) return <p className="text-center py-8 text-sm text-slate-500">Đang tải...</p>;
 
   return (
     <div className="space-y-6">
-      <div className="bg-white shadow rounded-lg p-6">
+      <div className="bg-white border border-slate-200 shadow-sm rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-md font-medium text-gray-900">Cấu hình hệ thống</h3>
+          <h3 className="text-md font-medium text-slate-900">Cấu hình hệ thống</h3>
           <button onClick={downloadBackup}
-            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700">
+            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700">
             <Download className="h-4 w-4 mr-1" /> Tải backup (JSON)
           </button>
         </div>
 
-        <table className="min-w-full divide-y divide-gray-200">
-          <tbody className="divide-y divide-gray-200">
+        <table className="min-w-full divide-y divide-slate-200">
+          <tbody className="divide-y divide-slate-200">
             {settings.map((s) => (
               <tr key={s.id}>
-                <td className="px-3 py-2 text-sm font-mono text-gray-900 w-48">{s.key}</td>
-                <td className="px-3 py-2 text-sm text-gray-600 w-64">{s.description}</td>
+                <td className="px-3 py-2 text-sm font-mono text-slate-900 w-48">{s.key}</td>
+                <td className="px-3 py-2 text-sm text-slate-600 w-64">{s.description}</td>
                 <td className="px-3 py-2">
                   <input
                     type="text" defaultValue={s.value}
                     onBlur={(e) => e.target.value !== s.value && saveSetting(s.key, e.target.value)}
-                    className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm"
+                    className="block w-full border border-slate-300 rounded-lg px-2 py-1 text-sm"
                   />
                 </td>
               </tr>
@@ -662,14 +662,14 @@ function SettingsTab() {
             <tr>
               <td className="px-3 py-2">
                 <input type="text" value={newKey} onChange={(e) => setNewKey(e.target.value)}
-                  placeholder="key mới" className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm" />
+                  placeholder="key mới" className="block w-full border border-slate-300 rounded-lg px-2 py-1 text-sm" />
               </td>
               <td />
               <td className="px-3 py-2 flex gap-2">
                 <input type="text" value={newValue} onChange={(e) => setNewValue(e.target.value)}
-                  placeholder="giá trị" className="block flex-1 border border-gray-300 rounded-md px-2 py-1 text-sm" />
+                  placeholder="giá trị" className="block flex-1 border border-slate-300 rounded-lg px-2 py-1 text-sm" />
                 <button onClick={() => { if (newKey) { saveSetting(newKey, newValue); setNewKey(''); setNewValue(''); } }}
-                  className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm">Thêm</button>
+                  className="px-3 py-1 bg-brand-600 text-white rounded-lg text-sm">Thêm</button>
               </td>
             </tr>
           </tbody>

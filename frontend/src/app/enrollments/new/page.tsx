@@ -101,38 +101,38 @@ export default function NewEnrollmentPage() {
   };
 
   return (
-    <div className="py-6">
+    <div>
       <div className="max-w-2xl mx-auto px-4 sm:px-6 md:px-8">
         <div className="mb-8">
           <div className="flex items-center">
             <button
               onClick={() => router.push('/enrollments')}
-              className="mr-4 p-2 text-gray-400 hover:text-gray-600"
+              className="mr-4 p-2 text-slate-400 hover:text-slate-600"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900">Đăng ký khóa học</h1>
-              <p className="text-sm text-gray-500">Ghi danh học viên vào khóa học/lớp</p>
+              <h1 className="text-xl font-bold tracking-tight text-slate-900">Đăng ký khóa học</h1>
+              <p className="text-sm text-slate-500">Ghi danh học viên vào khóa học/lớp</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white shadow sm:rounded-lg">
+        <div className="bg-white border border-slate-200 shadow-sm sm:rounded-lg">
           <form onSubmit={handleSubmit} className="space-y-6 p-6">
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+              <h3 className="text-base font-semibold text-slate-900 mb-4 flex items-center">
                 <BookOpen className="mr-2 h-5 w-5" />
                 Thông tin đăng ký
               </h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Học viên *</label>
+                  <label className="block text-sm font-medium text-slate-700">Học viên *</label>
                   <select
                     required
                     value={formData.studentId}
                     onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full border border-slate-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
                   >
                     <option value="">Chọn học viên</option>
                     {students.map(s => (
@@ -142,12 +142,12 @@ export default function NewEnrollmentPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Khóa học *</label>
+                  <label className="block text-sm font-medium text-slate-700">Khóa học *</label>
                   <select
                     required
                     value={formData.courseId}
                     onChange={(e) => setFormData({ ...formData, courseId: e.target.value, classId: '' })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full border border-slate-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
                   >
                     <option value="">Chọn khóa học</option>
                     {courses.map(c => (
@@ -157,12 +157,12 @@ export default function NewEnrollmentPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Lớp (tùy chọn)</label>
+                  <label className="block text-sm font-medium text-slate-700">Lớp (tùy chọn)</label>
                   <select
                     value={formData.classId}
                     onChange={(e) => setFormData({ ...formData, classId: e.target.value })}
                     disabled={!formData.courseId}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                    className="mt-1 block w-full border border-slate-300 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200 disabled:bg-slate-100"
                   >
                     <option value="">Chưa xếp lớp</option>
                     {filteredClasses.map(c => (
@@ -170,7 +170,7 @@ export default function NewEnrollmentPage() {
                     ))}
                   </select>
                   {!formData.courseId && (
-                    <p className="mt-1 text-xs text-gray-500">Chọn khóa học trước</p>
+                    <p className="mt-1 text-xs text-slate-500">Chọn khóa học trước</p>
                   )}
                 </div>
               </div>
@@ -180,14 +180,14 @@ export default function NewEnrollmentPage() {
               <button
                 type="button"
                 onClick={() => router.push('/enrollments')}
-                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                className="px-4 py-2 border border-slate-300 rounded-lg shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50"
               >
                 Hủy
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-50"
               >
                 <Save className="-ml-1 mr-2 h-4 w-4" />
                 {loading ? 'Đang lưu...' : 'Đăng ký'}

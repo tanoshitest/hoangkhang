@@ -70,34 +70,34 @@ export default function NewReceivablePage() {
   };
 
   return (
-    <div className="py-6">
+    <div>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 md:px-8">
-        <Link href="/finance" className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">
+        <Link href="/finance" className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700">
           <ArrowLeft className="h-4 w-4 mr-1" /> Quay lại Tài chính
         </Link>
-        <h1 className="mt-4 text-2xl font-semibold text-gray-900">Tạo khoản phải thu</h1>
+        <h1 className="mt-4 text-xl font-bold tracking-tight text-slate-900">Tạo khoản phải thu</h1>
 
         {error && <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="mt-6 bg-white shadow rounded-lg p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="mt-6 bg-white border border-slate-200 shadow-sm rounded-lg p-6 space-y-6">
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Học viên *</label>
+              <label className="block text-sm font-medium text-slate-700">Học viên *</label>
               <select
                 required value={form.studentId}
                 onChange={(e) => setForm({ ...form, studentId: e.target.value })}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
               >
                 <option value="">-- Chọn học viên --</option>
                 {students.map(s => <option key={s.id} value={s.id}>{s.name} ({s.code})</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Khóa học *</label>
+              <label className="block text-sm font-medium text-slate-700">Khóa học *</label>
               <select
                 required value={form.courseId}
                 onChange={(e) => selectCourse(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
               >
                 <option value="">-- Chọn khóa học --</option>
                 {courses.map(c => <option key={c.id} value={c.id}>{c.name} ({c.code})</option>)}
@@ -107,53 +107,53 @@ export default function NewReceivablePage() {
 
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Học phí chuẩn *</label>
+              <label className="block text-sm font-medium text-slate-700">Học phí chuẩn *</label>
               <input
                 type="number" required min="0" value={form.standardFee}
                 onChange={(e) => setForm({ ...form, standardFee: e.target.value })}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Hạn thanh toán</label>
+              <label className="block text-sm font-medium text-slate-700">Hạn thanh toán</label>
               <input
                 type="date" value={form.dueDate}
                 onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Giảm giá</label>
+              <label className="block text-sm font-medium text-slate-700">Giảm giá</label>
               <input
                 type="number" min="0" value={form.discount}
                 onChange={(e) => setForm({ ...form, discount: e.target.value })}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Học bổng</label>
+              <label className="block text-sm font-medium text-slate-700">Học bổng</label>
               <input
                 type="number" min="0" value={form.scholarship}
                 onChange={(e) => setForm({ ...form, scholarship: e.target.value })}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Phụ phí</label>
+              <label className="block text-sm font-medium text-slate-700">Phụ phí</label>
               <input
                 type="number" min="0" value={form.extraFee}
                 onChange={(e) => setForm({ ...form, extraFee: e.target.value })}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
               />
             </div>
           </div>
 
-          <div className="bg-blue-50 rounded-md p-4 flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">Tổng phải thu:</span>
-            <span className={`text-xl font-bold ${total < 0 ? 'text-red-600' : 'text-blue-600'}`}>
+          <div className="bg-brand-50 rounded-lg p-4 flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-700">Tổng phải thu:</span>
+            <span className={`text-xl font-bold ${total < 0 ? 'text-red-600' : 'text-brand-600'}`}>
               {formatVND(total)}
             </span>
           </div>
@@ -161,11 +161,11 @@ export default function NewReceivablePage() {
           <div className="flex gap-3">
             <button
               type="submit" disabled={saving || !form.studentId || !form.courseId || total < 0}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
             >
               {saving ? 'Đang lưu...' : 'Tạo khoản phải thu'}
             </button>
-            <Link href="/finance" className="px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700">
+            <Link href="/finance" className="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-700">
               Hủy
             </Link>
           </div>

@@ -103,22 +103,22 @@ export default function TeachersPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="py-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+    <div>
+      <div className="max-w-7xl mx-auto">
         <div className="md:flex md:items-center md:justify-between">
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-semibold text-gray-900">Giáo viên</h1>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">Giáo viên</h1>
           </div>
           <div className="mt-4 flex md:mt-0 md:ml-4">
             <button
               onClick={() => setShowForm(!showForm)}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
             >
               <Plus className="-ml-1 mr-2 h-4 w-4" />
               Thêm Giáo viên
@@ -128,44 +128,44 @@ export default function TeachersPage() {
 
         {/* Create Form */}
         {showForm && (
-          <div className="mt-6 bg-white shadow sm:rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Thêm giáo viên mới</h3>
+          <div className="mt-6 bg-white border border-slate-200 shadow-sm sm:rounded-lg p-6">
+            <h3 className="text-base font-semibold text-slate-900 mb-4">Thêm giáo viên mới</h3>
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Họ tên *</label>
+                <label className="block text-sm font-medium text-slate-700">Họ tên *</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
+                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Điện thoại *</label>
+                <label className="block text-sm font-medium text-slate-700">Điện thoại *</label>
                 <input
                   type="tel"
                   required
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
+                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
+                <label className="block text-sm font-medium text-slate-700">Email</label>
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
+                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Hình thức hợp tác *</label>
+                <label className="block text-sm font-medium text-slate-700">Hình thức hợp tác *</label>
                 <select
                   value={formData.cooperationType}
                   onChange={(e) => setFormData({ ...formData, cooperationType: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
+                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
                 >
                   <option value="fulltime">Full-time</option>
                   <option value="parttime">Part-time</option>
@@ -173,46 +173,46 @@ export default function TeachersPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Học vấn</label>
+                <label className="block text-sm font-medium text-slate-700">Học vấn</label>
                 <input
                   type="text"
                   value={formData.education}
                   onChange={(e) => setFormData({ ...formData, education: e.target.value })}
                   placeholder="VD: Thạc sĩ Nhật ngữ"
-                  className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
+                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Chứng chỉ</label>
+                <label className="block text-sm font-medium text-slate-700">Chứng chỉ</label>
                 <input
                   type="text"
                   value={formData.certificates}
                   onChange={(e) => setFormData({ ...formData, certificates: e.target.value })}
                   placeholder="VD: JLPT N1, Chứng chỉ sư phạm"
-                  className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
+                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Giờ tối đa/tuần</label>
+                <label className="block text-sm font-medium text-slate-700">Giờ tối đa/tuần</label>
                 <input
                   type="number"
                   value={formData.maxHoursPerWeek}
                   onChange={(e) => setFormData({ ...formData, maxHoursPerWeek: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
+                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
                 />
               </div>
               <div className="md:col-span-2 flex justify-end space-x-3">
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  className="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 bg-white hover:bg-slate-50"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                  className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
                 >
                   {submitting ? 'Đang lưu...' : 'Thêm giáo viên'}
                 </button>
@@ -224,11 +224,11 @@ export default function TeachersPage() {
         {/* Search */}
         <div className="mt-6">
           <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               type="text"
               placeholder="Tìm kiếm giáo viên..."
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+              className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-200 w-full"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -240,54 +240,54 @@ export default function TeachersPage() {
           {filtered.map((teacher) => (
             <div
               key={teacher.id}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow cursor-pointer"
+              className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 hover:shadow-md transition-shadow cursor-pointer"
               onClick={() => router.push(`/teachers/${teacher.id}`)}
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center">
-                  <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                    <GraduationCap className="h-6 w-6 text-blue-600" />
+                  <div className="h-12 w-12 rounded-full bg-brand-100 flex items-center justify-center">
+                    <GraduationCap className="h-6 w-6 text-brand-600" />
                   </div>
                   <div className="ml-3">
-                    <h3 className="text-lg font-medium text-gray-900">{teacher.name}</h3>
-                    <p className="text-sm text-gray-500">{teacher.code}</p>
+                    <h3 className="text-base font-semibold text-slate-900">{teacher.name}</h3>
+                    <p className="text-sm text-slate-500">{teacher.code}</p>
                   </div>
                 </div>
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-800">
                   {coopLabel(teacher.cooperationType)}
                 </span>
               </div>
-              <div className="mt-4 space-y-2 text-sm text-gray-600">
+              <div className="mt-4 space-y-2 text-sm text-slate-600">
                 <div className="flex items-center">
-                  <Phone className="h-4 w-4 mr-2 text-gray-400" />
+                  <Phone className="h-4 w-4 mr-2 text-slate-400" />
                   {teacher.phone}
                 </div>
                 {teacher.email && (
                   <div className="flex items-center">
-                    <Mail className="h-4 w-4 mr-2 text-gray-400" />
+                    <Mail className="h-4 w-4 mr-2 text-slate-400" />
                     {teacher.email}
                   </div>
                 )}
                 {teacher.maxHoursPerWeek && (
                   <div className="flex items-center">
-                    <Clock className="h-4 w-4 mr-2 text-gray-400" />
+                    <Clock className="h-4 w-4 mr-2 text-slate-400" />
                     Tối đa {teacher.maxHoursPerWeek}h/tuần
                   </div>
                 )}
               </div>
-              <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between text-sm">
-                <span className="text-gray-500">{teacher._count.classesMain} lớp</span>
-                <span className="text-gray-500">{teacher._count.sessions} sessions</span>
+              <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between text-sm">
+                <span className="text-slate-500">{teacher._count.classesMain} lớp</span>
+                <span className="text-slate-500">{teacher._count.sessions} sessions</span>
               </div>
             </div>
           ))}
         </div>
 
         {filtered.length === 0 && (
-          <div className="text-center py-12 bg-white rounded-md shadow mt-6">
-            <GraduationCap className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">Chưa có giáo viên nào</h3>
-            <p className="mt-1 text-sm text-gray-500">Thêm giáo viên đầu tiên.</p>
+          <div className="text-center py-12 bg-white rounded-xl border border-slate-200 shadow-sm mt-6">
+            <GraduationCap className="mx-auto h-12 w-12 text-slate-400" />
+            <h3 className="mt-2 text-sm font-medium text-slate-900">Chưa có giáo viên nào</h3>
+            <p className="mt-1 text-sm text-slate-500">Thêm giáo viên đầu tiên.</p>
           </div>
         )}
       </div>

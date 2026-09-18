@@ -129,14 +129,14 @@ export default function ClassDetailPage() {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      planned: 'bg-gray-100 text-gray-800',
-      recruiting: 'bg-blue-100 text-blue-800',
+      planned: 'bg-slate-100 text-slate-800',
+      recruiting: 'bg-brand-100 text-brand-800',
       full: 'bg-yellow-100 text-yellow-800',
       studying: 'bg-green-100 text-green-800',
       paused: 'bg-orange-100 text-orange-800',
-      finished: 'bg-gray-100 text-gray-600',
+      finished: 'bg-slate-100 text-slate-600',
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return colors[status] || 'bg-slate-100 text-slate-800';
   };
 
   const getStatusLabel = (status: string) => {
@@ -167,7 +167,7 @@ export default function ClassDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
       </div>
     );
   }
@@ -175,10 +175,10 @@ export default function ClassDetailPage() {
   if (!classData) {
     return (
       <div className="text-center py-12">
-        <h3 className="text-sm font-medium text-gray-900">Lớp không tồn tại</h3>
+        <h3 className="text-sm font-medium text-slate-900">Lớp không tồn tại</h3>
         <button
           onClick={() => router.push('/classes')}
-          className="mt-4 inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+          className="mt-4 inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Quay lại
@@ -188,30 +188,30 @@ export default function ClassDetailPage() {
   }
 
   return (
-    <div className="py-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+    <div>
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <button
                 onClick={() => router.push('/classes')}
-                className="mr-4 p-2 text-gray-400 hover:text-gray-600"
+                className="mr-4 p-2 text-slate-400 hover:text-slate-600"
               >
                 <ArrowLeft className="h-5 w-5" />
               </button>
               <div>
-                <h1 className="text-2xl font-semibold text-gray-900">
+                <h1 className="text-xl font-bold tracking-tight text-slate-900">
                   {classData.code} — {classData.course.name}
                 </h1>
-                <p className="text-sm text-gray-500 flex items-center space-x-3 mt-1">
+                <p className="text-sm text-slate-500 flex items-center space-x-3 mt-1">
                   <span className="flex items-center">
                     <Calendar className="h-4 w-4 mr-1" />
                     {new Date(classData.startDate).toLocaleDateString('vi-VN')} → {new Date(classData.endDate).toLocaleDateString('vi-VN')}
                   </span>
                   {classData.schedule && <span>{classData.schedule}</span>}
                   {classData.meetingLink && (
-                    <a href={classData.meetingLink} target="_blank" rel="noopener noreferrer" className="flex items-center text-blue-600 hover:underline">
+                    <a href={classData.meetingLink} target="_blank" rel="noopener noreferrer" className="flex items-center text-brand-600 hover:underline">
                       <Video className="h-4 w-4 mr-1" />
                       Meeting
                     </a>
@@ -227,32 +227,32 @@ export default function ClassDetailPage() {
 
         {/* Info Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div className="text-sm text-gray-500">Học viên</div>
-            <div className="text-2xl font-semibold text-gray-900">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+            <div className="text-sm text-slate-500">Học viên</div>
+            <div className="text-xl font-bold tracking-tight text-slate-900">
               {activeMembers.length}{classData.maxStudents ? `/${classData.maxStudents}` : ''}
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div className="text-sm text-gray-500">Sessions</div>
-            <div className="text-2xl font-semibold text-gray-900">{classData.sessions.length}</div>
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+            <div className="text-sm text-slate-500">Sessions</div>
+            <div className="text-xl font-bold tracking-tight text-slate-900">{classData.sessions.length}</div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div className="text-sm text-gray-500">GV chính</div>
-            <div className="text-sm font-medium text-gray-900 mt-1">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+            <div className="text-sm text-slate-500">GV chính</div>
+            <div className="text-sm font-medium text-slate-900 mt-1">
               {classData.mainTeacher?.name || 'Chưa phân công'}
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div className="text-sm text-gray-500">GV phụ</div>
-            <div className="text-sm font-medium text-gray-900 mt-1">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+            <div className="text-sm text-slate-500">GV phụ</div>
+            <div className="text-sm font-medium text-slate-900 mt-1">
               {classData.supportTeacher?.name || '—'}
             </div>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="border-b border-gray-200">
+        <div className="border-b border-slate-200">
           <nav className="-mb-px flex space-x-8">
             {[
               { id: 'members', name: `Học viên (${activeMembers.length})` },
@@ -264,8 +264,8 @@ export default function ClassDetailPage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`${
                   activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-brand-500 text-brand-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                 } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm`}
               >
                 {tab.name}
@@ -277,25 +277,25 @@ export default function ClassDetailPage() {
         <div className="mt-6">
           {/* Members Tab */}
           {activeTab === 'members' && (
-            <div className="bg-white shadow overflow-hidden sm:rounded-md">
-              <div className="px-4 py-4 border-b border-gray-200 flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-900">Danh sách học viên</h3>
+            <div className="bg-white border border-slate-200 shadow-sm overflow-hidden sm:rounded-xl">
+              <div className="px-4 py-4 border-b border-slate-200 flex items-center justify-between">
+                <h3 className="text-base font-semibold text-slate-900">Danh sách học viên</h3>
                 <button
                   onClick={() => setShowAddMember(!showAddMember)}
-                  className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                  className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
                 >
                   <Plus className="mr-1 h-4 w-4" />
                   Thêm HV
                 </button>
               </div>
               {showAddMember && (
-                <div className="px-4 py-4 bg-gray-50 border-b border-gray-200">
+                <div className="px-4 py-4 bg-slate-50 border-b border-slate-200">
                   {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
                   <div className="flex gap-3">
                     <select
                       value={selectedStudent}
                       onChange={(e) => setSelectedStudent(e.target.value)}
-                      className="flex-1 border border-gray-300 rounded-md py-2 px-3 text-sm"
+                      className="flex-1 border border-slate-300 rounded-lg py-2 px-3 text-sm"
                     >
                       <option value="">Chọn học viên</option>
                       {students
@@ -307,34 +307,34 @@ export default function ClassDetailPage() {
                     <button
                       onClick={addMember}
                       disabled={!selectedStudent || submitting}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                      className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
                     >
                       {submitting ? 'Đang thêm...' : 'Thêm'}
                     </button>
                   </div>
                 </div>
               )}
-              <ul className="divide-y divide-gray-200">
+              <ul className="divide-y divide-slate-200">
                 {activeMembers.map((member) => (
                   <li key={member.id} className="px-4 py-4 flex items-center justify-between">
                     <div
                       className="cursor-pointer"
                       onClick={() => router.push(`/students/${member.student.id}`)}
                     >
-                      <div className="text-sm font-medium text-gray-900 hover:text-blue-600">
+                      <div className="text-sm font-medium text-slate-900 hover:text-brand-600">
                         {member.student.name}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-slate-500">
                         {member.student.code} • {member.student.phone}
                       </div>
                     </div>
                     <div className="flex items-center space-x-3">
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-slate-400">
                         Vào {new Date(member.joinedAt).toLocaleDateString('vi-VN')}
                       </span>
                       <button
                         onClick={() => removeMember(member.id)}
-                        className="text-gray-400 hover:text-red-600"
+                        className="text-slate-400 hover:text-red-600"
                       >
                         <X className="h-4 w-4" />
                       </button>
@@ -342,7 +342,7 @@ export default function ClassDetailPage() {
                   </li>
                 ))}
                 {activeMembers.length === 0 && (
-                  <li className="px-4 py-8 text-center text-sm text-gray-500">
+                  <li className="px-4 py-8 text-center text-sm text-slate-500">
                     Chưa có học viên nào trong lớp
                   </li>
                 )}
@@ -352,31 +352,31 @@ export default function ClassDetailPage() {
 
           {/* Sessions Tab */}
           {activeTab === 'sessions' && (
-            <div className="bg-white shadow overflow-hidden sm:rounded-md">
-              <ul className="divide-y divide-gray-200">
+            <div className="bg-white border border-slate-200 shadow-sm overflow-hidden sm:rounded-xl">
+              <ul className="divide-y divide-slate-200">
                 {classData.sessions.map((session) => (
                   <li key={session.id}>
                     <div
-                      className="px-4 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50"
+                      className="px-4 py-4 flex items-center justify-between cursor-pointer hover:bg-slate-50"
                       onClick={() => router.push(`/sessions/${session.id}`)}
                     >
                       <div className="flex items-center">
                         <div className="flex-shrink-0">
-                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                            <Clock className="h-5 w-5 text-blue-600" />
+                          <div className="h-10 w-10 rounded-full bg-brand-100 flex items-center justify-center">
+                            <Clock className="h-5 w-5 text-brand-600" />
                           </div>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-slate-900">
                             {new Date(session.date).toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'numeric' })}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-slate-500">
                             {session.startTime}-{session.endTime} • {session.teacher.name}
                           </div>
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-slate-500">
                           {session._count.attendances} điểm danh
                         </span>
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(session.status)}`}>
@@ -387,7 +387,7 @@ export default function ClassDetailPage() {
                   </li>
                 ))}
                 {classData.sessions.length === 0 && (
-                  <li className="px-4 py-8 text-center text-sm text-gray-500">
+                  <li className="px-4 py-8 text-center text-sm text-slate-500">
                     Chưa có session nào — tạo từ trang Lịch dạy
                   </li>
                 )}
@@ -397,32 +397,32 @@ export default function ClassDetailPage() {
 
           {/* Info Tab */}
           {activeTab === 'info' && (
-            <div className="bg-white shadow sm:rounded-lg">
+            <div className="bg-white border border-slate-200 shadow-sm sm:rounded-lg">
               <div className="px-4 py-5 sm:p-6">
                 <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                   <div>
-                    <dt className="text-sm font-medium text-gray-500">Mã lớp</dt>
-                    <dd className="mt-1 text-sm text-gray-900">{classData.code}</dd>
+                    <dt className="text-sm font-medium text-slate-500">Mã lớp</dt>
+                    <dd className="mt-1 text-sm text-slate-900">{classData.code}</dd>
                   </div>
                   <div>
-                    <dt className="text-sm font-medium text-gray-500">Khóa học</dt>
-                    <dd className="mt-1 text-sm text-gray-900">{classData.course.name} ({classData.course.level})</dd>
+                    <dt className="text-sm font-medium text-slate-500">Khóa học</dt>
+                    <dd className="mt-1 text-sm text-slate-900">{classData.course.name} ({classData.course.level})</dd>
                   </div>
                   <div>
-                    <dt className="text-sm font-medium text-gray-500">Hình thức</dt>
-                    <dd className="mt-1 text-sm text-gray-900">{classData.format}</dd>
+                    <dt className="text-sm font-medium text-slate-500">Hình thức</dt>
+                    <dd className="mt-1 text-sm text-slate-900">{classData.format}</dd>
                   </div>
                   <div>
-                    <dt className="text-sm font-medium text-gray-500">Giáo trình</dt>
-                    <dd className="mt-1 text-sm text-gray-900">{classData.course.textbook || '—'}</dd>
+                    <dt className="text-sm font-medium text-slate-500">Giáo trình</dt>
+                    <dd className="mt-1 text-sm text-slate-900">{classData.course.textbook || '—'}</dd>
                   </div>
                   <div>
-                    <dt className="text-sm font-medium text-gray-500">Lịch học</dt>
-                    <dd className="mt-1 text-sm text-gray-900">{classData.schedule || '—'}</dd>
+                    <dt className="text-sm font-medium text-slate-500">Lịch học</dt>
+                    <dd className="mt-1 text-sm text-slate-900">{classData.schedule || '—'}</dd>
                   </div>
                   <div>
-                    <dt className="text-sm font-medium text-gray-500">Nội dung</dt>
-                    <dd className="mt-1 text-sm text-gray-900">{classData.content || '—'}</dd>
+                    <dt className="text-sm font-medium text-slate-500">Nội dung</dt>
+                    <dd className="mt-1 text-sm text-slate-900">{classData.content || '—'}</dd>
                   </div>
                 </dl>
               </div>

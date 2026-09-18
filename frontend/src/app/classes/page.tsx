@@ -112,14 +112,14 @@ export default function ClassesPage() {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      planned: 'bg-gray-100 text-gray-800',
-      recruiting: 'bg-blue-100 text-blue-800',
+      planned: 'bg-slate-100 text-slate-800',
+      recruiting: 'bg-brand-100 text-brand-800',
       full: 'bg-yellow-100 text-yellow-800',
       studying: 'bg-green-100 text-green-800',
       paused: 'bg-orange-100 text-orange-800',
-      finished: 'bg-gray-100 text-gray-600',
+      finished: 'bg-slate-100 text-slate-600',
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return colors[status] || 'bg-slate-100 text-slate-800';
   };
 
   const getStatusLabel = (status: string) => {
@@ -142,28 +142,28 @@ export default function ClassesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="py-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+    <div>
+      <div className="max-w-7xl mx-auto">
         <div className="md:flex md:items-center md:justify-between">
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-semibold text-gray-900">Lớp học</h1>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">Lớp học</h1>
           </div>
           <div className="mt-4 flex md:mt-0 md:ml-4 space-x-3">
             <button
               onClick={() => router.push('/courses')}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              className="inline-flex items-center px-4 py-2 border border-slate-300 rounded-lg shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50"
             >
               Khóa học
             </button>
             <button
               onClick={() => setShowForm(!showForm)}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
             >
               <Plus className="-ml-1 mr-2 h-4 w-4" />
               Thêm Lớp
@@ -173,22 +173,22 @@ export default function ClassesPage() {
 
         {/* Create Form */}
         {showForm && (
-          <div className="mt-6 bg-white shadow sm:rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Tạo lớp mới</h3>
+          <div className="mt-6 bg-white border border-slate-200 shadow-sm sm:rounded-lg p-6">
+            <h3 className="text-base font-semibold text-slate-900 mb-4">Tạo lớp mới</h3>
             {error && (
-              <div className="mb-4 bg-red-50 border border-red-200 rounded-md p-3 flex items-start">
+              <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3 flex items-start">
                 <AlertTriangle className="h-5 w-5 text-red-400 mr-2 flex-shrink-0" />
                 <span className="text-sm text-red-700">{error}</span>
               </div>
             )}
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Khóa học *</label>
+                <label className="block text-sm font-medium text-slate-700">Khóa học *</label>
                 <select
                   required
                   value={formData.courseId}
                   onChange={(e) => setFormData({ ...formData, courseId: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
+                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
                 >
                   <option value="">Chọn khóa học</option>
                   {courses.map(c => (
@@ -197,40 +197,40 @@ export default function ClassesPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Sĩ số tối đa</label>
+                <label className="block text-sm font-medium text-slate-700">Sĩ số tối đa</label>
                 <input
                   type="number"
                   value={formData.maxStudents}
                   onChange={(e) => setFormData({ ...formData, maxStudents: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
+                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Ngày bắt đầu *</label>
+                <label className="block text-sm font-medium text-slate-700">Ngày bắt đầu *</label>
                 <input
                   type="date"
                   required
                   value={formData.startDate}
                   onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
+                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Ngày kết thúc *</label>
+                <label className="block text-sm font-medium text-slate-700">Ngày kết thúc *</label>
                 <input
                   type="date"
                   required
                   value={formData.endDate}
                   onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
+                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">GV chính</label>
+                <label className="block text-sm font-medium text-slate-700">GV chính</label>
                 <select
                   value={formData.mainTeacherId}
                   onChange={(e) => setFormData({ ...formData, mainTeacherId: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
+                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
                 >
                   <option value="">Chọn giáo viên</option>
                   {teachers.map(t => (
@@ -239,11 +239,11 @@ export default function ClassesPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">GV phụ</label>
+                <label className="block text-sm font-medium text-slate-700">GV phụ</label>
                 <select
                   value={formData.supportTeacherId}
                   onChange={(e) => setFormData({ ...formData, supportTeacherId: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
+                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
                 >
                   <option value="">Chọn giáo viên</option>
                   {teachers.map(t => (
@@ -252,37 +252,37 @@ export default function ClassesPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Lịch học</label>
+                <label className="block text-sm font-medium text-slate-700">Lịch học</label>
                 <input
                   type="text"
                   value={formData.schedule}
                   onChange={(e) => setFormData({ ...formData, schedule: e.target.value })}
                   placeholder="VD: Tối 2-4-6, 19:30-21:30"
-                  className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
+                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Link meeting</label>
+                <label className="block text-sm font-medium text-slate-700">Link meeting</label>
                 <input
                   type="text"
                   value={formData.meetingLink}
                   onChange={(e) => setFormData({ ...formData, meetingLink: e.target.value })}
                   placeholder="https://meet.google.com/..."
-                  className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
+                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
                 />
               </div>
               <div className="md:col-span-2 flex justify-end space-x-3">
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  className="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 bg-white hover:bg-slate-50"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                  className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
                 >
                   {submitting ? 'Đang lưu...' : 'Tạo lớp'}
                 </button>
@@ -294,11 +294,11 @@ export default function ClassesPage() {
         {/* Search */}
         <div className="mt-6">
           <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               type="text"
               placeholder="Tìm kiếm lớp..."
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+              className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-200 w-full"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -306,25 +306,25 @@ export default function ClassesPage() {
         </div>
 
         {/* Classes Table */}
-        <div className="mt-6 bg-white shadow overflow-hidden sm:rounded-md">
-          <ul className="divide-y divide-gray-200">
+        <div className="mt-6 bg-white border border-slate-200 shadow-sm overflow-hidden sm:rounded-xl">
+          <ul className="divide-y divide-slate-200">
             {filtered.map((cls) => (
               <li key={cls.id}>
                 <div
-                  className="px-4 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50"
+                  className="px-4 py-4 flex items-center justify-between cursor-pointer hover:bg-slate-50"
                   onClick={() => router.push(`/classes/${cls.id}`)}
                 >
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
-                      <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                        <Users className="h-5 w-5 text-blue-600" />
+                      <div className="h-10 w-10 rounded-full bg-brand-100 flex items-center justify-center">
+                        <Users className="h-5 w-5 text-brand-600" />
                       </div>
                     </div>
                     <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-slate-900">
                         {cls.code} — {cls.course.name}
                       </div>
-                      <div className="text-sm text-gray-500 flex items-center space-x-3">
+                      <div className="text-sm text-slate-500 flex items-center space-x-3">
                         <span className="flex items-center">
                           <Calendar className="h-3 w-3 mr-1" />
                           {new Date(cls.startDate).toLocaleDateString('vi-VN')} → {new Date(cls.endDate).toLocaleDateString('vi-VN')}
@@ -339,7 +339,7 @@ export default function ClassesPage() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-4">
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-slate-500">
                       {cls._count.classMembers}{cls.maxStudents ? `/${cls.maxStudents}` : ''} HV
                     </div>
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(cls.status)}`}>
@@ -353,10 +353,10 @@ export default function ClassesPage() {
         </div>
 
         {filtered.length === 0 && (
-          <div className="text-center py-12 bg-white rounded-md shadow mt-6">
-            <Users className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">Chưa có lớp nào</h3>
-            <p className="mt-1 text-sm text-gray-500">Tạo lớp đầu tiên cho khóa học.</p>
+          <div className="text-center py-12 bg-white rounded-xl border border-slate-200 shadow-sm mt-6">
+            <Users className="mx-auto h-12 w-12 text-slate-400" />
+            <h3 className="mt-2 text-sm font-medium text-slate-900">Chưa có lớp nào</h3>
+            <p className="mt-1 text-sm text-slate-500">Tạo lớp đầu tiên cho khóa học.</p>
           </div>
         )}
       </div>

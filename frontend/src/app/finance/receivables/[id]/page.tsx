@@ -64,7 +64,7 @@ const ADJ_TYPE_LABELS: Record<string, string> = {
 const PAYMENT_STATUS: Record<string, { label: string; color: string }> = {
   pending: { label: 'Chờ xác nhận', color: 'bg-yellow-100 text-yellow-800' },
   confirmed: { label: 'Đã xác nhận', color: 'bg-green-100 text-green-800' },
-  cancelled: { label: 'Đã hủy', color: 'bg-gray-100 text-gray-500' },
+  cancelled: { label: 'Đã hủy', color: 'bg-slate-100 text-slate-500' },
 };
 
 const ADJ_STATUS: Record<string, { label: string; color: string }> = {
@@ -170,32 +170,32 @@ export default function ReceivableDetailPage({ params }: { params: Promise<{ id:
   };
 
   if (loading) return <div className="flex justify-center items-center h-64">Đang tải...</div>;
-  if (!data) return <div className="text-center py-12 text-gray-500">Không tìm thấy khoản phải thu</div>;
+  if (!data) return <div className="text-center py-12 text-slate-500">Không tìm thấy khoản phải thu</div>;
 
   return (
-    <div className="py-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-        <Link href="/finance" className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">
+    <div>
+      <div className="max-w-7xl mx-auto">
+        <Link href="/finance" className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700">
           <ArrowLeft className="h-4 w-4 mr-1" /> Quay lại Tài chính
         </Link>
 
         <div className="mt-4 md:flex md:items-start md:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">
-              {data.student.name} <span className="text-base font-normal text-gray-500">({data.student.code})</span>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">
+              {data.student.name} <span className="text-base font-normal text-slate-500">({data.student.code})</span>
             </h1>
-            <p className="text-sm text-gray-500 mt-1">{data.course.name} • Hạn: {formatDate(data.dueDate)}</p>
+            <p className="text-sm text-slate-500 mt-1">{data.course.name} • Hạn: {formatDate(data.dueDate)}</p>
           </div>
           <div className="mt-4 md:mt-0 flex gap-2">
             <button
               onClick={() => setShowPaymentForm(true)}
-              className="inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+              className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
             >
               <Plus className="h-4 w-4 mr-1" /> Ghi nhận thanh toán
             </button>
             <button
               onClick={() => setShowAdjForm(true)}
-              className="inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
+              className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50"
             >
               Điều chỉnh
             </button>
@@ -205,72 +205,72 @@ export default function ReceivableDetailPage({ params }: { params: Promise<{ id:
         {error && <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">{error}</div>}
 
         {/* Amount breakdown */}
-        <div className="mt-6 bg-white shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Chi tiết khoản thu</h2>
+        <div className="mt-6 bg-white border border-slate-200 shadow-sm rounded-lg p-6">
+          <h2 className="text-base font-semibold text-slate-900 mb-4">Chi tiết khoản thu</h2>
           <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div>
-              <dt className="text-sm text-gray-500">Học phí chuẩn</dt>
-              <dd className="text-sm font-medium text-gray-900">{formatVND(data.standardFee)}</dd>
+              <dt className="text-sm text-slate-500">Học phí chuẩn</dt>
+              <dd className="text-sm font-medium text-slate-900">{formatVND(data.standardFee)}</dd>
             </div>
             <div>
-              <dt className="text-sm text-gray-500">Giảm giá / Học bổng</dt>
-              <dd className="text-sm font-medium text-gray-900">-{formatVND(data.discount + data.scholarship)}</dd>
+              <dt className="text-sm text-slate-500">Giảm giá / Học bổng</dt>
+              <dd className="text-sm font-medium text-slate-900">-{formatVND(data.discount + data.scholarship)}</dd>
             </div>
             <div>
-              <dt className="text-sm text-gray-500">Phụ phí</dt>
-              <dd className="text-sm font-medium text-gray-900">+{formatVND(data.extraFee)}</dd>
+              <dt className="text-sm text-slate-500">Phụ phí</dt>
+              <dd className="text-sm font-medium text-slate-900">+{formatVND(data.extraFee)}</dd>
             </div>
             <div>
-              <dt className="text-sm text-gray-500">Tổng phải thu (sau điều chỉnh)</dt>
-              <dd className="text-sm font-semibold text-blue-600">{formatVND(data.adjustedTotal)}</dd>
+              <dt className="text-sm text-slate-500">Tổng phải thu (sau điều chỉnh)</dt>
+              <dd className="text-sm font-semibold text-brand-600">{formatVND(data.adjustedTotal)}</dd>
             </div>
           </dl>
           <div className="mt-4 pt-4 border-t grid grid-cols-3 gap-4">
             <div>
-              <dt className="text-sm text-gray-500">Đã thu{data.refunded > 0 ? ` (hoàn ${formatVND(data.refunded)})` : ''}</dt>
+              <dt className="text-sm text-slate-500">Đã thu{data.refunded > 0 ? ` (hoàn ${formatVND(data.refunded)})` : ''}</dt>
               <dd className="text-lg font-semibold text-green-600">{formatVND(data.netPaid)}</dd>
             </div>
             <div>
-              <dt className="text-sm text-gray-500">Còn nợ</dt>
+              <dt className="text-sm text-slate-500">Còn nợ</dt>
               <dd className={`text-lg font-semibold ${data.remaining > 0 ? 'text-red-600' : 'text-green-600'}`}>
                 {formatVND(data.remaining)}
               </dd>
             </div>
             <div>
-              <dt className="text-sm text-gray-500">Trạng thái</dt>
-              <dd className="text-sm font-medium text-gray-900 capitalize">{data.status}</dd>
+              <dt className="text-sm text-slate-500">Trạng thái</dt>
+              <dd className="text-sm font-medium text-slate-900 capitalize">{data.status}</dd>
             </div>
           </div>
         </div>
 
         {/* Payment form modal */}
         {showPaymentForm && (
-          <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <h3 className="text-md font-medium text-gray-900 mb-4">Ghi nhận thanh toán</h3>
+          <div className="mt-6 bg-brand-50 border border-brand-200 rounded-lg p-6">
+            <h3 className="text-md font-medium text-slate-900 mb-4">Ghi nhận thanh toán</h3>
             <form onSubmit={submitPayment} className="grid grid-cols-1 gap-4 sm:grid-cols-4">
               <div>
-                <label className="block text-sm text-gray-700">Số tiền *</label>
+                <label className="block text-sm text-slate-700">Số tiền *</label>
                 <input
                   type="number" required min="1" value={paymentForm.amount}
                   onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                   placeholder={String(data.remaining)}
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-700">Ngày thanh toán</label>
+                <label className="block text-sm text-slate-700">Ngày thanh toán</label>
                 <input
                   type="date" value={paymentForm.paymentDate}
                   onChange={(e) => setPaymentForm({ ...paymentForm, paymentDate: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-700">Phương thức</label>
+                <label className="block text-sm text-slate-700">Phương thức</label>
                 <select
                   value={paymentForm.method}
                   onChange={(e) => setPaymentForm({ ...paymentForm, method: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                 >
                   <option value="cash">Tiền mặt</option>
                   <option value="bank_transfer">Chuyển khoản</option>
@@ -279,18 +279,18 @@ export default function ReceivableDetailPage({ params }: { params: Promise<{ id:
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-gray-700">Mã tham chiếu</label>
+                <label className="block text-sm text-slate-700">Mã tham chiếu</label>
                 <input
                   type="text" value={paymentForm.reference}
                   onChange={(e) => setPaymentForm({ ...paymentForm, reference: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                 />
               </div>
               <div className="sm:col-span-4 flex gap-2">
-                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700">
+                <button type="submit" className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm hover:bg-brand-700">
                   Lưu thanh toán
                 </button>
-                <button type="button" onClick={() => setShowPaymentForm(false)} className="px-4 py-2 border border-gray-300 rounded-md text-sm">
+                <button type="button" onClick={() => setShowPaymentForm(false)} className="px-4 py-2 border border-slate-300 rounded-lg text-sm">
                   Hủy
                 </button>
               </div>
@@ -301,14 +301,14 @@ export default function ReceivableDetailPage({ params }: { params: Promise<{ id:
         {/* Adjustment form */}
         {showAdjForm && (
           <div className="mt-6 bg-purple-50 border border-purple-200 rounded-lg p-6">
-            <h3 className="text-md font-medium text-gray-900 mb-4">Tạo điều chỉnh (hoàn phí / miễn giảm / điều chỉnh sai)</h3>
+            <h3 className="text-md font-medium text-slate-900 mb-4">Tạo điều chỉnh (hoàn phí / miễn giảm / điều chỉnh sai)</h3>
             <form onSubmit={submitAdjustment} className="grid grid-cols-1 gap-4 sm:grid-cols-4">
               <div>
-                <label className="block text-sm text-gray-700">Loại</label>
+                <label className="block text-sm text-slate-700">Loại</label>
                 <select
                   value={adjForm.type}
                   onChange={(e) => setAdjForm({ ...adjForm, type: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                 >
                   {Object.entries(ADJ_TYPE_LABELS).map(([k, v]) => (
                     <option key={k} value={k}>{v}</option>
@@ -316,26 +316,26 @@ export default function ReceivableDetailPage({ params }: { params: Promise<{ id:
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-gray-700">Số tiền *</label>
+                <label className="block text-sm text-slate-700">Số tiền *</label>
                 <input
                   type="number" required value={adjForm.amount}
                   onChange={(e) => setAdjForm({ ...adjForm, amount: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                 />
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-sm text-gray-700">Lý do *</label>
+                <label className="block text-sm text-slate-700">Lý do *</label>
                 <input
                   type="text" required value={adjForm.reason}
                   onChange={(e) => setAdjForm({ ...adjForm, reason: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                 />
               </div>
               <div className="sm:col-span-4 flex gap-2">
-                <button type="submit" className="px-4 py-2 bg-purple-600 text-white rounded-md text-sm hover:bg-purple-700">
+                <button type="submit" className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700">
                   Tạo điều chỉnh
                 </button>
-                <button type="button" onClick={() => setShowAdjForm(false)} className="px-4 py-2 border border-gray-300 rounded-md text-sm">
+                <button type="button" onClick={() => setShowAdjForm(false)} className="px-4 py-2 border border-slate-300 rounded-lg text-sm">
                   Hủy
                 </button>
               </div>
@@ -345,22 +345,22 @@ export default function ReceivableDetailPage({ params }: { params: Promise<{ id:
 
         {/* Payments list */}
         <div className="mt-8">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Lịch sử thanh toán</h2>
-          <div className="bg-white shadow overflow-hidden sm:rounded-md">
+          <h2 className="text-base font-semibold text-slate-900 mb-4">Lịch sử thanh toán</h2>
+          <div className="bg-white border border-slate-200 shadow-sm overflow-hidden sm:rounded-xl">
             {data.payments.length === 0 ? (
-              <p className="text-center py-8 text-sm text-gray-500">Chưa có giao dịch nào</p>
+              <p className="text-center py-8 text-sm text-slate-500">Chưa có giao dịch nào</p>
             ) : (
-              <ul className="divide-y divide-gray-200">
+              <ul className="divide-y divide-slate-200">
                 {data.payments.map((p) => (
                   <li key={p.id} className="px-4 py-4 sm:px-6 flex items-center justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-900">{p.code}</span>
+                        <span className="text-sm font-medium text-slate-900">{p.code}</span>
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${PAYMENT_STATUS[p.status]?.color}`}>
                           {PAYMENT_STATUS[p.status]?.label}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-sm text-slate-500 mt-1">
                         {formatVND(p.amount)} • {METHOD_LABELS[p.method]} • {formatDate(p.paymentDate)}
                         {p.reference && ` • Ref: ${p.reference}`}
                       </p>
@@ -369,13 +369,13 @@ export default function ReceivableDetailPage({ params }: { params: Promise<{ id:
                       <div className="flex gap-2">
                         <button
                           onClick={() => confirmPayment(p.id)}
-                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 rounded-md hover:bg-green-100"
+                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 rounded-lg hover:bg-green-100"
                         >
                           <CheckCircle className="h-4 w-4 mr-1" /> Xác nhận
                         </button>
                         <button
                           onClick={() => cancelPayment(p.id)}
-                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 rounded-md hover:bg-red-100"
+                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100"
                         >
                           <XCircle className="h-4 w-4 mr-1" /> Hủy
                         </button>
@@ -390,22 +390,22 @@ export default function ReceivableDetailPage({ params }: { params: Promise<{ id:
 
         {/* Adjustments list */}
         <div className="mt-8 mb-8">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Điều chỉnh</h2>
-          <div className="bg-white shadow overflow-hidden sm:rounded-md">
+          <h2 className="text-base font-semibold text-slate-900 mb-4">Điều chỉnh</h2>
+          <div className="bg-white border border-slate-200 shadow-sm overflow-hidden sm:rounded-xl">
             {data.adjustments.length === 0 ? (
-              <p className="text-center py-8 text-sm text-gray-500">Chưa có điều chỉnh nào</p>
+              <p className="text-center py-8 text-sm text-slate-500">Chưa có điều chỉnh nào</p>
             ) : (
-              <ul className="divide-y divide-gray-200">
+              <ul className="divide-y divide-slate-200">
                 {data.adjustments.map((a) => (
                   <li key={a.id} className="px-4 py-4 sm:px-6">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-900">{ADJ_TYPE_LABELS[a.type]}</span>
+                      <span className="text-sm font-medium text-slate-900">{ADJ_TYPE_LABELS[a.type]}</span>
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ADJ_STATUS[a.status]?.color}`}>
                         {ADJ_STATUS[a.status]?.label}
                       </span>
-                      <span className="text-sm font-medium text-gray-900">{formatVND(a.amount)}</span>
+                      <span className="text-sm font-medium text-slate-900">{formatVND(a.amount)}</span>
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">{a.reason} • {formatDate(a.createdAt)}</p>
+                    <p className="text-sm text-slate-500 mt-1">{a.reason} • {formatDate(a.createdAt)}</p>
                   </li>
                 ))}
               </ul>
