@@ -1,221 +1,176 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
-  Users,
-  GraduationCap,
-  BookOpen,
-  Calendar,
-  CreditCard,
-  TrendingUp,
-  AlertTriangle,
-  CheckCircle,
+  Users, GraduationCap, BookOpen, Calendar, CreditCard,
+  AlertTriangle, CheckCircle, Clock, Wallet,
 } from 'lucide-react';
+import { formatVND } from '../finance/page';
 
-interface DashboardStats {
-  newLeads: number;
-  followUpLeads: number;
-  overdueLeads: number;
-  activeStudents: number;
-  waitingStudents: number;
-  reservedStudents: number;
-  droppedStudents: number;
-  completedStudents: number;
-  recruitingClasses: number;
-  studyingClasses: number;
-  totalReceivables: number;
-  paidAmount: number;
-  debtAmount: number;
-  overdueDebt: number;
+interface DashboardData {
+  leads: { new: number; followUpDue: number; followUpOverdue: number };
+  students: {
+    studying: number; waitingClass: number; reserved: number;
+    dropped: number; completed: number; transferred: number;
+  };
+  classes: {
+    recruiting: number; studying: number; capacity: number;
+    enrolled: number; fillRate: number;
+  };
+  warnings: { open: number };
+  finance: {
+    totalReceivable: number; totalCollected: number;
+    totalRemaining: number; overdueCount: number; overdueAmount: number;
+  };
+  teachers: { taughtSessions: number };
+  today: { sessions: number };
 }
 
 export default function Dashboard() {
-  const [stats, setStats] = useState<DashboardStats>({
-    newLeads: 0,
-    followUpLeads: 0,
-    overdueLeads: 0,
-    activeStudents: 0,
-    waitingStudents: 0,
-    reservedStudents: 0,
-    droppedStudents: 0,
-    completedStudents: 0,
-    recruitingClasses: 0,
-    studyingClasses: 0,
-    totalReceivables: 0,
-    paidAmount: 0,
-    debtAmount: 0,
-    overdueDebt: 0,
-  });
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reports/dashboard`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) setData(await res.json());
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboard();
+  }, []);
+
+  if (loading) return <div className="flex justify-center items-center h-64">Đang tải...</div>;
+  if (!data) return <div className="text-center py-12 text-gray-500">Không tải được dữ liệu</div>;
 
   const statCards = [
-    {
-      title: 'Lead mới',
-      value: stats.newLeads,
-      icon: Users,
-      color: 'bg-blue-500',
-      change: '+12%',
-    },
-    {
-      title: 'Học viên đang học',
-      value: stats.activeStudents,
-      icon: GraduationCap,
-      color: 'bg-green-500',
-      change: '+8%',
-    },
-    {
-      title: 'Lớp đang học',
-      value: stats.studyingClasses,
-      icon: BookOpen,
-      color: 'bg-purple-500',
-      change: '+3',
-    },
-    {
-      title: 'Phải thu',
-      value: `${(stats.totalReceivables / 1000000).toFixed(1)}M`,
-      icon: CreditCard,
-      color: 'bg-yellow-500',
-      change: '+15%',
-    },
+    { title: 'Lead mới', value: data.leads.new, icon: Users, color: 'bg-blue-500', href: '/leads' },
+    { title: 'Học viên đang học', value: data.students.studying, icon: GraduationCap, color: 'bg-green-500', href: '/students' },
+    { title: 'Lớp đang học', value: data.classes.studying, icon: BookOpen, color: 'bg-purple-500', href: '/classes' },
+    { title: 'Buổi học hôm nay', value: data.today.sessions, icon: Calendar, color: 'bg-indigo-500', href: '/sessions' },
   ];
 
   const alertCards = [
-    {
-      title: 'Lead quá hạn',
-      value: stats.overdueLeads,
-      icon: AlertTriangle,
-      color: 'bg-red-500',
-    },
-    {
-      title: 'Công nợ quá hạn',
-      value: stats.overdueDebt,
-      icon: CreditCard,
-      color: 'bg-red-500',
-    },
-    {
-      title: 'Chờ xếp lớp',
-      value: stats.waitingStudents,
-      icon: Calendar,
-      color: 'bg-orange-500',
-    },
-    {
-      title: 'Bảo lưu',
-      value: stats.reservedStudents,
-      icon: CheckCircle,
-      color: 'bg-blue-500',
-    },
+    { title: 'Follow-up quá hạn', value: data.leads.followUpOverdue, icon: AlertTriangle, color: 'bg-red-500', href: '/leads' },
+    { title: 'Công nợ quá hạn', value: data.finance.overdueCount, sub: formatVND(data.finance.overdueAmount), icon: CreditCard, color: 'bg-red-500', href: '/finance/debt' },
+    { title: 'Chờ xếp lớp', value: data.students.waitingClass, icon: Clock, color: 'bg-orange-500', href: '/students' },
+    { title: 'Cảnh báo học tập', value: data.warnings.open, icon: AlertTriangle, color: 'bg-yellow-500', href: '/warnings' },
   ];
 
   return (
     <div className="py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
         <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-      </div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-        {/* Stats Cards */}
-        <div className="mt-8">
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {statCards.map((card) => (
-              <div key={card.title} className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <card.icon className={`h-6 w-6 text-white ${card.color} p-1 rounded`} />
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
-                          {card.title}
-                        </dt>
-                        <dd className="flex items-baseline">
-                          <div className="text-2xl font-semibold text-gray-900">
-                            {card.value}
-                          </div>
-                          <div className="ml-2 flex items-baseline text-sm font-semibold text-green-600">
-                            <TrendingUp className="self-center flex-shrink-0 h-4 w-4 text-green-500" />
-                            <span className="sr-only">Increased by</span>
-                            {card.change}
-                          </div>
-                        </dd>
-                      </dl>
-                    </div>
+
+        {/* Main stats */}
+        <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {statCards.map((card) => (
+            <Link key={card.title} href={card.href} className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow">
+              <div className="p-5">
+                <div className="flex items-center">
+                  <card.icon className={`h-6 w-6 text-white ${card.color} p-1 rounded`} />
+                  <div className="ml-5">
+                    <p className="text-sm font-medium text-gray-500 truncate">{card.title}</p>
+                    <p className="text-2xl font-semibold text-gray-900">{card.value}</p>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
+            </Link>
+          ))}
         </div>
 
-        {/* Alert Cards */}
-        <div className="mt-8">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Cảnh báo</h2>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {alertCards.map((card) => (
-              <div key={card.title} className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <card.icon className={`h-6 w-6 text-white ${card.color} p-1 rounded`} />
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
-                          {card.title}
-                        </dt>
-                        <dd className="text-2xl font-semibold text-gray-900">
-                          {card.value}
-                        </dd>
-                      </dl>
-                    </div>
+        {/* Alerts */}
+        <h2 className="mt-8 text-lg font-medium text-gray-900 mb-4">Cần chú ý</h2>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {alertCards.map((card) => (
+            <Link key={card.title} href={card.href} className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow">
+              <div className="p-5">
+                <div className="flex items-center">
+                  <card.icon className={`h-6 w-6 text-white ${card.color} p-1 rounded`} />
+                  <div className="ml-5">
+                    <p className="text-sm font-medium text-gray-500 truncate">{card.title}</p>
+                    <p className="text-2xl font-semibold text-gray-900">{card.value}</p>
+                    {card.sub && <p className="text-xs text-red-600">{card.sub}</p>}
                   </div>
                 </div>
               </div>
-            ))}
+            </Link>
+          ))}
+        </div>
+
+        {/* Finance + Students breakdown */}
+        <div className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <div className="bg-white shadow rounded-lg p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+              <Wallet className="h-5 w-5 mr-2 text-blue-500" /> Tài chính
+            </h3>
+            <dl className="grid grid-cols-2 gap-4">
+              <div>
+                <dt className="text-sm text-gray-500">Tổng phải thu</dt>
+                <dd className="text-lg font-semibold text-gray-900">{formatVND(data.finance.totalReceivable)}</dd>
+              </div>
+              <div>
+                <dt className="text-sm text-gray-500">Đã thu</dt>
+                <dd className="text-lg font-semibold text-green-600">{formatVND(data.finance.totalCollected)}</dd>
+              </div>
+              <div>
+                <dt className="text-sm text-gray-500">Còn nợ</dt>
+                <dd className="text-lg font-semibold text-yellow-600">{formatVND(data.finance.totalRemaining)}</dd>
+              </div>
+              <div>
+                <dt className="text-sm text-gray-500">Lấp đầy lớp</dt>
+                <dd className="text-lg font-semibold text-gray-900">
+                  {data.classes.fillRate}% <span className="text-xs font-normal text-gray-500">({data.classes.enrolled}/{data.classes.capacity})</span>
+                </dd>
+              </div>
+            </dl>
+            <Link href="/finance" className="mt-4 inline-block text-sm text-blue-600 hover:underline">Xem chi tiết →</Link>
+          </div>
+
+          <div className="bg-white shadow rounded-lg p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+              <GraduationCap className="h-5 w-5 mr-2 text-green-500" /> Học viên
+            </h3>
+            <dl className="grid grid-cols-3 gap-4">
+              <div><dt className="text-sm text-gray-500">Đang học</dt><dd className="text-lg font-semibold text-green-600">{data.students.studying}</dd></div>
+              <div><dt className="text-sm text-gray-500">Chờ lớp</dt><dd className="text-lg font-semibold text-orange-600">{data.students.waitingClass}</dd></div>
+              <div><dt className="text-sm text-gray-500">Bảo lưu</dt><dd className="text-lg font-semibold text-blue-600">{data.students.reserved}</dd></div>
+              <div><dt className="text-sm text-gray-500">Nghỉ</dt><dd className="text-lg font-semibold text-red-600">{data.students.dropped}</dd></div>
+              <div><dt className="text-sm text-gray-500">Hoàn thành</dt><dd className="text-lg font-semibold text-gray-900">{data.students.completed}</dd></div>
+              <div><dt className="text-sm text-gray-500">Chuyển</dt><dd className="text-lg font-semibold text-gray-900">{data.students.transferred}</dd></div>
+            </dl>
+            <Link href="/students" className="mt-4 inline-block text-sm text-blue-600 hover:underline">Xem chi tiết →</Link>
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="mt-8">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Thao tác nhanh</h2>
-          <div className="bg-white shadow overflow-hidden sm:rounded-md">
-            <ul className="divide-y divide-gray-200">
-              <li>
-                <a href="/leads/new" className="block hover:bg-gray-50 px-4 py-4 sm:px-6">
+        {/* Quick actions */}
+        <h2 className="mt-8 text-lg font-medium text-gray-900 mb-4">Thao tác nhanh</h2>
+        <div className="bg-white shadow overflow-hidden sm:rounded-md">
+          <ul className="divide-y divide-gray-200">
+            {[
+              { href: '/leads/new', label: '+ Tạo Lead mới', desc: 'Thêm khách hàng tiềm năng' },
+              { href: '/students/new', label: '+ Thêm Học viên', desc: 'Tạo hồ sơ học viên mới' },
+              { href: '/finance/receivables/new', label: '+ Tạo khoản phải thu', desc: 'Ghi nhận học phí cần thu' },
+              { href: '/payroll', label: '+ Tạo bảng lương', desc: 'Đối soát giờ dạy giáo viên' },
+            ].map((a) => (
+              <li key={a.href}>
+                <Link href={a.href} className="block hover:bg-gray-50 px-4 py-4 sm:px-6">
                   <div className="flex items-center justify-between">
-                    <div className="text-sm font-medium text-blue-600">
-                      + Tạo Lead mới
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      Thêm khách hàng tiềm năng
-                    </div>
+                    <span className="text-sm font-medium text-blue-600">{a.label}</span>
+                    <span className="text-sm text-gray-500">{a.desc}</span>
                   </div>
-                </a>
+                </Link>
               </li>
-              <li>
-                <a href="/students/new" className="block hover:bg-gray-50 px-4 py-4 sm:px-6">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm font-medium text-blue-600">
-                      + Thêm Học viên
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      Tạo hồ sơ học viên mới
-                    </div>
-                  </div>
-                </a>
-              </li>
-              <li>
-                <a href="/classes/new" className="block hover:bg-gray-50 px-4 py-4 sm:px-6">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm font-medium text-blue-600">
-                      + Tạo Lớp học
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      Mở lớp học mới
-                    </div>
-                  </div>
-                </a>
-              </li>
-            </ul>
-          </div>
+            ))}
+          </ul>
         </div>
       </div>
     </div>

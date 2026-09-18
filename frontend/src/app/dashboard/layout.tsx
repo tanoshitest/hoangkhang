@@ -36,6 +36,7 @@ export default function DashboardLayout({
 }) {
   const [user, setUser] = useState<User | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const router = useRouter();
 
   useEffect(() => {
@@ -48,6 +49,14 @@ export default function DashboardLayout({
     }
 
     setUser(JSON.parse(userData));
+
+    // Fetch unread notification count
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => d && setUnreadCount(d.unreadCount || 0))
+      .catch(() => {});
   }, [router]);
 
   const handleLogout = () => {
@@ -163,9 +172,14 @@ export default function DashboardLayout({
               </div>
             </div>
             <div className="ml-4 flex items-center md:ml-6">
-              <button className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              <Link href="/notifications" className="relative bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 <Bell className="h-6 w-6" />
-              </button>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-red-500 text-white text-xs font-medium">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </Link>
               <div className="ml-3 relative">
                 <div className="flex items-center">
                   <span className="text-sm font-medium text-gray-700 mr-2">
