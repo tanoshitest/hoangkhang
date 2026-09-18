@@ -44,6 +44,14 @@ interface Session {
     notes?: string;
     student: Student;
   }>;
+  progress: Array<{
+    id: string;
+    studentId: string;
+    testScore?: number;
+    completionRate?: number;
+    teacherComment?: string;
+    skillsToImprove?: string;
+  }>;
 }
 
 const attendanceStatuses = [
@@ -62,6 +70,8 @@ export default function SessionDetailPage() {
   const [saving, setSaving] = useState(false);
   const [attendanceMap, setAttendanceMap] = useState<Record<string, AttendanceRecord>>({});
   const [sessionInfo, setSessionInfo] = useState({ actualContent: '', homework: '', notes: '', status: '' });
+  const [progressMap, setProgressMap] = useState<Record<string, { testScore: string; completionRate: string; teacherComment: string }>>({});
+  const [savingProgress, setSavingProgress] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState('');
 
   useEffect(() => {
@@ -94,11 +104,48 @@ export default function SessionDetailPage() {
           };
         });
         setAttendanceMap(map);
+        // Build progress map from existing records
+        const pMap: Record<string, { testScore: string; completionRate: string; teacherComment: string }> = {};
+        data.class.classMembers.forEach((m: any) => {
+          const existing = (data.progress || []).find((p: any) => p.studentId === m.student.id);
+          pMap[m.student.id] = {
+            testScore: existing?.testScore != null ? String(existing.testScore) : '',
+            completionRate: existing?.completionRate != null ? String(existing.completionRate) : '',
+            teacherComment: existing?.teacherComment || '',
+          };
+        });
+        setProgressMap(pMap);
       }
     } catch (error) {
       console.error('Failed to fetch session:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const saveProgress = async (studentId: string) => {
+    const p = progressMap[studentId];
+    if (!p) return;
+    setSavingProgress(studentId);
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sessions/${params.id}/progress`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          studentId,
+          testScore: p.testScore !== '' ? Number(p.testScore) : undefined,
+          completionRate: p.completionRate !== '' ? Number(p.completionRate) : undefined,
+          teacherComment: p.teacherComment || undefined,
+        }),
+      });
+      setSaveMessage('Đã lưu điểm/nhận xét');
+      setTimeout(() => setSaveMessage(''), 3000);
+    } finally {
+      setSavingProgress(null);
     }
   };
 
@@ -359,6 +406,64 @@ export default function SessionDetailPage() {
               {saving ? 'Đang lưu...' : 'Lưu điểm danh'}
             </button>
           </div>
+        </div>
+
+        {/* Scores & Comments */}
+        <div className="bg-white shadow sm:rounded-lg mt-6">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-medium text-gray-900">Điểm & Nhận xét</h3>
+          </div>
+          <ul className="divide-y divide-gray-200">
+            {session.class.classMembers.map((member) => {
+              const p = progressMap[member.student.id] || { testScore: '', completionRate: '', teacherComment: '' };
+              return (
+                <li key={member.id} className="px-6 py-4">
+                  <div className="flex flex-col md:flex-row md:items-center gap-3">
+                    <div className="md:w-48">
+                      <div className="text-sm font-medium text-gray-900">{member.student.name}</div>
+                      <div className="text-xs text-gray-500">{member.student.code}</div>
+                    </div>
+                    <div className="flex flex-1 flex-wrap items-center gap-2">
+                      <input
+                        type="number" step="0.5" min="0" placeholder="Điểm"
+                        value={p.testScore}
+                        onChange={(e) => setProgressMap({
+                          ...progressMap,
+                          [member.student.id]: { ...p, testScore: e.target.value },
+                        })}
+                        className="w-20 border border-gray-300 rounded-md py-1.5 px-2 text-sm"
+                      />
+                      <input
+                        type="number" min="0" max="100" placeholder="% HT"
+                        value={p.completionRate}
+                        onChange={(e) => setProgressMap({
+                          ...progressMap,
+                          [member.student.id]: { ...p, completionRate: e.target.value },
+                        })}
+                        className="w-20 border border-gray-300 rounded-md py-1.5 px-2 text-sm"
+                      />
+                      <input
+                        type="text" placeholder="Nhận xét của giáo viên..."
+                        value={p.teacherComment}
+                        onChange={(e) => setProgressMap({
+                          ...progressMap,
+                          [member.student.id]: { ...p, teacherComment: e.target.value },
+                        })}
+                        className="flex-1 min-w-40 border border-gray-300 rounded-md py-1.5 px-3 text-sm"
+                      />
+                      <button
+                        onClick={() => saveProgress(member.student.id)}
+                        disabled={savingProgress === member.student.id}
+                        className="px-3 py-1.5 rounded-md text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        {savingProgress === member.student.id ? 'Lưu...' : 'Lưu'}
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       </div>
     </div>

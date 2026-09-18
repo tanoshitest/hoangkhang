@@ -23,6 +23,7 @@ const leadSchema = z.object({
   interestedCourse: z.string().optional(),
   expectedClass: z.string().optional(),
   notes: z.string().optional(),
+  assignedToId: z.string().nullable().optional(),
 });
 
 // GET /api/leads - Get all leads with pagination
@@ -149,7 +150,7 @@ router.post('/', requirePermission('leads', 'write'), async (req: AuthenticatedR
         ...data,
         code,
         status: 'new',
-        assignedToId: req.user?.id,
+        assignedToId: data.assignedToId || req.user?.id,
       },
       include: {
         assignedTo: {

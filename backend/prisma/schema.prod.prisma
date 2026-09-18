@@ -1,0 +1,683 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== AUTH ====================
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  phone     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  roles       UserRole[]
+  auditLogs   AuditLog[]
+  notifications Notification[]
+  assignedLeads Lead[]    @relation("LeadAssignedTo")
+
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique // admin, manager, sales, academic, teacher, accountant
+  displayName String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       UserRole[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  name        String   @unique // leads:read, leads:write, etc
+  module      String   // leads, students, finance, etc
+  action      String   // read, write, delete
+  description String?
+  createdAt   DateTime @default(now())
+
+  roles       RolePermission[]
+
+  @@map("permissions")
+}
+
+model UserRole {
+  userId    String
+  roleId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  createdAt    DateTime @default(now())
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// ==================== CRM - LEAD ====================
+
+model Lead {
+  id              String   @id @default(uuid())
+  code            String   @unique
+  name            String
+  birthYear       Int?
+  phone           String   @unique
+  zalo            String?
+  email           String?
+  province        String?
+  educationLevel  String?
+  goal            String?
+  japanProgram    String?
+  availableTime   String?
+  source          String   // facebook, tiktok, website, ads, referral, teacher, other
+  assignedToId    String?
+  receivedDate    DateTime @default(now())
+  lastContactDate DateTime?
+  nextFollowUpDate DateTime?
+  status          String   // new, assigned, contacted, consulting, test_pending, trial, decision_pending, registered, not_registered
+  interestedCourse String?
+  expectedClass   String?
+  notRegisteredReason String?
+  notes           String?
+  convertedToStudentId String? // student.id if converted
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  assignedTo      User?     @relation("LeadAssignedTo", fields: [assignedToId], references: [id])
+  activities      LeadActivity[]
+  followUps       LeadFollowUp[]
+  trialTests      TrialTest[]
+
+  @@map("leads")
+}
+
+model LeadActivity {
+  id        String   @id @default(uuid())
+  leadId    String
+  type      String   // call, message, email, meeting
+  content   String
+  createdAt DateTime @default(now())
+  createdBy String
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@map("lead_activities")
+}
+
+model LeadFollowUp {
+  id        String   @id @default(uuid())
+  leadId    String
+  date      DateTime
+  content   String
+  status    String   // scheduled, done, overdue
+  createdAt DateTime @default(now())
+  createdBy String
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@map("lead_followups")
+}
+
+model TrialTest {
+  id        String   @id @default(uuid())
+  leadId    String
+  type      String   // placement_test, trial_class
+  date      DateTime
+  result    String?
+  notes     String?
+  createdAt DateTime @default(now())
+  createdBy String
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@map("trial_tests")
+}
+
+// ==================== STUDENT ====================
+
+model Student {
+  id                  String   @id @default(uuid())
+  code                String   @unique
+  name                String
+  birthDate           DateTime?
+  gender              String?   // male, female, other
+  phone               String   @unique
+  email               String?
+  address             String?
+  emergencyContact    String?
+  emergencyPhone      String?
+  educationLevel      String?
+  goal                String?
+  currentCourse       String?
+  currentClass        String?
+  assignedTeacher     String?
+  registeredDate      DateTime @default(now())
+  startDate           DateTime?
+  expectedEndDate     DateTime?
+  completedDate       DateTime?
+  workSchedule        String?
+  supportNeeds        String?
+  notes               String?
+  referredBy          String?
+  status              String   // waiting_class, studying, reserved, transferred, dropped, completed
+  convertedFromLeadId String?  // lead.id if converted
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  contacts            StudentContact[]
+  enrollments         Enrollment[]
+  attendances         Attendance[]
+  learningProgress    LearningProgress[]
+  receivables         Receivable[]
+  warnings            AcademicWarning[]
+  attachments         Attachment[]
+  classMembers        ClassMember[]
+  assessments         Assessment[]
+
+  @@map("students")
+}
+
+model StudentContact {
+  id        String   @id @default(uuid())
+  studentId String
+  name      String
+  relation  String   // parent, sibling, friend, other
+  phone     String
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("student_contacts")
+}
+
+// ==================== ENROLLMENT ====================
+
+model Enrollment {
+  id          String   @id @default(uuid())
+  studentId   String
+  courseId    String
+  classId     String?
+  enrolledAt  DateTime @default(now())
+  startDate   DateTime?
+  endDate     DateTime?
+  status      String   // enrolled, studying, completed, dropped, reserved
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  student     Student @relation(fields: [studentId], references: [id])
+  course      Course  @relation(fields: [courseId], references: [id])
+  class       Class?  @relation(fields: [classId], references: [id])
+  events      EnrollmentEvent[]
+
+  @@map("enrollments")
+}
+
+model EnrollmentEvent {
+  id          String   @id @default(uuid())
+  enrollmentId String
+  type        String   // enroll, assign_class, transfer, reserve, resume, drop, complete
+  effectiveDate DateTime
+  reason      String?
+  approvedBy  String?
+  createdAt   DateTime @default(now())
+  createdBy   String
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@map("enrollment_events")
+}
+
+// ==================== ACADEMIC ====================
+
+model Course {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  level       String   // N5, N4, N3, N2, N1, etc
+  textbook    String?
+  goal        String?
+  totalSessions Int?
+  totalHours  Int?
+  standardFee Float?
+  content     String?
+  testSchedule String?
+  completionStandard String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  classes     Class[]
+  enrollments Enrollment[]
+  receivables Receivable[]
+
+  @@map("courses")
+}
+
+model Class {
+  id            String   @id @default(uuid())
+  code          String   @unique
+  courseId      String
+  format        String   // online
+  startDate     DateTime
+  endDate       DateTime
+  maxStudents   Int?
+  currentStudents Int    @default(0)
+  studyingStudents Int   @default(0)
+  waitingList   Int      @default(0)
+  mainTeacherId String?
+  supportTeacherId String?
+  schedule      String?  // JSON or text schedule
+  meetingLink   String?
+  content       String?
+  status        String   // planned, recruiting, full, studying, paused, finished
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  course        Course   @relation(fields: [courseId], references: [id])
+  mainTeacher   Teacher? @relation("ClassMainTeacher", fields: [mainTeacherId], references: [id])
+  supportTeacher Teacher? @relation("ClassSupportTeacher", fields: [supportTeacherId], references: [id])
+  enrollments   Enrollment[]
+  classMembers  ClassMember[]
+  sessions      Session[]
+
+  @@map("classes")
+}
+
+model ClassMember {
+  id        String   @id @default(uuid())
+  classId   String
+  studentId String
+  joinedAt  DateTime @default(now())
+  leftAt    DateTime?
+  status    String   // active, transferred, dropped
+
+  class   Class   @relation(fields: [classId], references: [id])
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@map("class_members")
+}
+
+model Session {
+  id            String   @id @default(uuid())
+  classId       String
+  date          DateTime
+  startTime     String   // HH:mm
+  endTime       String   // HH:mm
+  teacherId     String
+  meetingLink   String?
+  plannedContent String?
+  actualContent String?
+  homework      String?
+  notes         String?
+  status        String   // planned, taught, absent, makeup, rescheduled, teacher_changed
+  calculatedHours Float?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  class         Class    @relation(fields: [classId], references: [id])
+  teacher       Teacher  @relation(fields: [teacherId], references: [id])
+  attendances   Attendance[]
+  changes       SessionChange[]
+  progress      LearningProgress[]
+  payrollItems  TeacherPayrollItem[]
+
+  @@map("sessions")
+}
+
+model SessionChange {
+  id        String   @id @default(uuid())
+  sessionId String
+  type      String   // absent, makeup, rescheduled, teacher_changed
+  oldValue  String?
+  newValue  String?
+  reason    String?
+  createdAt DateTime @default(now())
+  createdBy String
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("session_changes")
+}
+
+model Attendance {
+  id        String   @id @default(uuid())
+  sessionId String
+  studentId String
+  status    String   // present, excused_absent, unexcused_absent, late, early_leave
+  notes     String?
+  createdAt DateTime @default(now())
+  createdBy String
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@map("attendance")
+}
+
+model LearningProgress {
+  id          String   @id @default(uuid())
+  sessionId   String
+  studentId   String
+  content     String?
+  actualContent String?
+  homework    String?
+  completionRate Int?    // percentage
+  testScore   Float?
+  teacherComment String?
+  skillsToImprove String?
+  createdAt   DateTime @default(now())
+  createdBy   String
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@map("learning_progress")
+}
+
+model Assessment {
+  id        String   @id @default(uuid())
+  studentId String
+  type      String   // quiz, midterm, final, jlpt_mock
+  date      DateTime
+  score     Float?
+  maxScore  Float?
+  grade     String?
+  notes     String?
+  createdAt DateTime @default(now())
+  createdBy String
+
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@map("assessments")
+}
+
+model AcademicWarning {
+  id        String   @id @default(uuid())
+  studentId String
+  type      String   // consecutive_absent, low_attendance, below_standard, no_homework, dropout_risk
+  status    String   // new, processing, contacted, resolved, closed
+  details   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  resolvedAt DateTime?
+  resolvedBy String?
+
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@map("academic_warnings")
+}
+
+// ==================== TEACHER ====================
+
+model Teacher {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  phone     String
+  email     String?
+  education String?
+  certificates String?
+  cooperationType String // fulltime, parttime, freelance
+  maxHoursPerWeek Int?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  availability TeacherAvailability[]
+  assignments  TeacherAssignment[]
+  rates        TeacherRate[]
+  payrollPeriods TeacherPayrollPeriod[]
+  classesMain  Class[] @relation("ClassMainTeacher")
+  classesSupport Class[] @relation("ClassSupportTeacher")
+  sessions     Session[]
+
+  @@map("teachers")
+}
+
+model TeacherAvailability {
+  id        String   @id @default(uuid())
+  teacherId String
+  dayOfWeek Int      // 0=Sunday, 1=Monday, etc
+  startTime String   // HH:mm
+  endTime   String   // HH:mm
+  isActive  Boolean  @default(true)
+
+  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@map("teacher_availability")
+}
+
+model TeacherAssignment {
+  id        String   @id @default(uuid())
+  teacherId String
+  sessionId String?
+  classId   String?
+  type      String   // assigned, actual, substitute, makeup, trial, cancelled
+  date      DateTime
+  hours     Float
+  notes     String?
+  createdAt DateTime @default(now())
+
+  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@map("teacher_assignments")
+}
+
+model TeacherRate {
+  id          String   @id @default(uuid())
+  teacherId   String
+  classType   String?  // online, offline, trial, etc
+  role        String   // main, support
+  rate        Float
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  approvedBy  String?
+  createdAt   DateTime @default(now())
+
+  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@map("teacher_rates")
+}
+
+model TeacherPayrollPeriod {
+  id          String   @id @default(uuid())
+  teacherId   String
+  periodStart DateTime
+  periodEnd   DateTime
+  status      String   @default("draft") // draft, confirmed, paid
+  totalHours  Float    @default(0)
+  totalAmount Float    @default(0)
+  notes       String?
+  confirmedBy String?
+  confirmedAt DateTime?
+  paidAt      DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  items   TeacherPayrollItem[]
+
+  @@map("teacher_payroll_periods")
+}
+
+model TeacherPayrollItem {
+  id          String   @id @default(uuid())
+  periodId    String
+  sessionId   String?
+  type        String   // regular, substitute, makeup, trial, cancelled, adjustment
+  date        DateTime
+  hours       Float
+  rate        Float
+  amount      Float
+  description String?
+  createdAt   DateTime @default(now())
+
+  period  TeacherPayrollPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  session Session?             @relation(fields: [sessionId], references: [id])
+
+  @@map("teacher_payroll_items")
+}
+
+// ==================== FINANCE ====================
+
+model Receivable {
+  id          String   @id @default(uuid())
+  studentId   String
+  courseId    String
+  standardFee Float
+  discount    Float    @default(0)
+  scholarship Float    @default(0)
+  extraFee    Float    @default(0)
+  totalAmount Float
+  dueDate     DateTime?
+  status      String   // pending, partial, paid, overdue, cancelled
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id])
+  course  Course  @relation(fields: [courseId], references: [id])
+  payments Payment[]
+  adjustments PaymentAdjustment[]
+
+  @@map("receivables")
+}
+
+model Payment {
+  id          String   @id @default(uuid())
+  receivableId String
+  code        String   @unique
+  amount      Float
+  paymentDate DateTime @default(now())
+  method      String   // cash, bank_transfer, card, other
+  reference   String?
+  receipt     String?
+  status      String   // pending, confirmed, cancelled
+  confirmedBy String?
+  confirmedAt DateTime?
+  createdAt   DateTime @default(now())
+  createdBy   String
+
+  receivable Receivable @relation(fields: [receivableId], references: [id])
+
+  @@map("payments")
+}
+
+model PaymentAdjustment {
+  id          String   @id @default(uuid())
+  receivableId String
+  type        String   // refund, transfer, reserve, exemption, correction
+  amount      Float
+  reason      String
+  approvedBy  String?
+  status      String   // pending, approved, rejected
+  createdAt   DateTime @default(now())
+  createdBy   String
+
+  receivable Receivable @relation(fields: [receivableId], references: [id])
+
+  @@map("payment_adjustments")
+}
+
+// ==================== SYSTEM ====================
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  content   String
+  type      String   // lead_reminder, followup_overdue, class_starting, debt_due, warning, etc
+  isRead    Boolean  @default(false)
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model Attachment {
+  id        String   @id @default(uuid())
+  studentId String?
+  entityType String  // student, lead, payment, etc
+  entityId   String
+  fileName  String
+  filePath  String
+  fileType  String
+  fileSize  Int
+  uploadedBy String
+  createdAt DateTime @default(now())
+
+  student Student? @relation(fields: [studentId], references: [id])
+
+  @@map("attachments")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String   // create, update, delete, view
+  entity    String   // student, lead, payment, etc
+  entityId  String
+  oldValue  Json?
+  newValue  Json?
+  reason    String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+model StatusDefinition {
+  id        String   @id @default(uuid())
+  module    String   // lead, student, class, session, payment, warning
+  status    String
+  displayName String
+  color     String?
+  isActive  Boolean  @default(true)
+  isSystem  Boolean  @default(false) // cannot delete if used
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@map("status_definitions")
+}
+
+model Setting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  type      String   // string, number, boolean, json
+  description String?
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}

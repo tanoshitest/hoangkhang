@@ -100,10 +100,9 @@ jspm_packages/
 ehthumbs.db
 Thumbs.db
 
-# Docker
-.dockerignore
-Dockerfile*
-docker-compose*.yml
+# Docker — NOTE: Dockerfile/docker-compose/.dockerignore MUST be committed
+# (Coolify builds from the repo). Only ignore local-only files:
+docker-compose.override.yml
 
 # Coolify
 .coolify/
