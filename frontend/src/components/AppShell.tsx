@@ -101,11 +101,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
-    if (!token || !userData) {
+    let parsed: User | null = null;
+    try {
+      parsed = userData ? (JSON.parse(userData) as User) : null;
+    } catch {
+      parsed = null;
+    }
+    if (!token || !parsed) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       router.push('/login');
       return;
     }
-    setUser(JSON.parse(userData));
+    setUser(parsed);
     setChecked(true);
 
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications`, {

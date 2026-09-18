@@ -7,8 +7,13 @@ export default function StaffPage() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const userData = localStorage.getItem('user');
-    const roles = userData ? JSON.parse(userData).roles || [] : [];
+    let roles: string[] = [];
+    try {
+      const userData = localStorage.getItem('user');
+      roles = userData ? JSON.parse(userData).roles || [] : [];
+    } catch {
+      roles = [];
+    }
     setIsAdmin(roles.includes('admin'));
   }, []);
 
