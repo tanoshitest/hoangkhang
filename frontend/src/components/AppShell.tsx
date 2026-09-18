@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Calendar, CreditCard,
   BarChart3, Settings, LogOut, Menu, X, Bell, ClipboardList, AlertTriangle,
-  UserCheck, Wallet, Kanban, School, LucideIcon,
+  UserCheck, Wallet, Kanban, School, UserCog, LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -33,13 +33,19 @@ const NAV: NavGroup[] = [
     ],
   },
   {
+    title: 'Quản lý người dùng',
+    items: [
+      { href: '/students', label: 'Quản lý học viên', icon: GraduationCap },
+      { href: '/teachers', label: 'Quản lý giáo viên', icon: UserCheck },
+      { href: '/staff', label: 'Quản lý nhân viên', icon: UserCog, adminOnly: true },
+    ],
+  },
+  {
     title: 'Đào tạo',
     items: [
-      { href: '/students', label: 'Học viên', icon: GraduationCap },
       { href: '/courses', label: 'Khóa học', icon: BookOpen },
       { href: '/classes', label: 'Lớp học', icon: School },
       { href: '/sessions', label: 'Lịch dạy', icon: Calendar },
-      { href: '/teachers', label: 'Giáo viên', icon: UserCheck },
       { href: '/warnings', label: 'Cảnh báo', icon: AlertTriangle },
     ],
   },
