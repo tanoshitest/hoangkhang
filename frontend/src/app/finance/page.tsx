@@ -86,19 +86,18 @@ export default function FinancePage() {
   return (
     <div>
       <div className="max-w-7xl mx-auto">
-        <div className="md:flex md:items-center md:justify-between">
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">Tài chính</h1>
+        <div className="flex justify-end">
           <Link
             href="/finance/receivables/new"
-            className="mt-4 md:mt-0 inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
+            className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
           >
-            <Plus className="-ml-1 mr-2 h-5 w-5" />
+            <Plus className="-ml-1 mr-1.5 h-4 w-4" />
             Tạo khoản phải thu
           </Link>
         </div>
 
         {/* Summary cards */}
-        <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <div className="bg-white overflow-hidden border border-slate-200 shadow-sm rounded-xl">
             <div className="p-5">
               <div className="flex items-center">

@@ -84,11 +84,10 @@ export default function PayrollPage() {
   return (
     <div>
       <div className="max-w-7xl mx-auto">
-        <div className="md:flex md:items-center md:justify-between">
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">Bảng lương giáo viên</h1>
+        <div className="flex justify-end">
           <button
             onClick={() => setShowGenerate(!showGenerate)}
-            className="mt-4 md:mt-0 inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
+            className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
           >
             <Plus className="h-4 w-4 mr-1" /> Tạo bảng lương
           </button>

@@ -103,29 +103,23 @@ export default function WarningsPage() {
   return (
     <div>
       <div className="max-w-7xl mx-auto">
-        <div className="md:flex md:items-center md:justify-between">
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold tracking-tight text-slate-900">Cảnh báo học viên</h1>
-            <p className="text-sm text-slate-500">Theo dõi học viên có nguy cơ</p>
-          </div>
-          <div className="mt-4 flex md:mt-0 md:ml-4">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="border border-slate-300 rounded-lg py-2 px-3 text-sm"
-            >
-              <option value="">Tất cả trạng thái</option>
-              <option value="new">Mới</option>
-              <option value="processing">Đang xử lý</option>
-              <option value="contacted">Đã liên hệ</option>
-              <option value="resolved">Đã giải quyết</option>
-              <option value="closed">Đã đóng</option>
-            </select>
-          </div>
+        <div className="mb-4 flex justify-end">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="border border-slate-300 rounded-lg py-2 px-3 text-sm"
+          >
+            <option value="">Tất cả trạng thái</option>
+            <option value="new">Mới</option>
+            <option value="processing">Đang xử lý</option>
+            <option value="contacted">Đã liên hệ</option>
+            <option value="resolved">Đã giải quyết</option>
+            <option value="closed">Đã đóng</option>
+          </select>
         </div>
 
         {/* Warnings List */}
-        <div className="mt-6 bg-white border border-slate-200 shadow-sm overflow-hidden sm:rounded-xl">
+        <div className="bg-white border border-slate-200 shadow-sm overflow-hidden sm:rounded-xl">
           <ul className="divide-y divide-slate-200">
             {warnings.map((warning) => (
               <li key={warning.id} className="px-4 py-4">

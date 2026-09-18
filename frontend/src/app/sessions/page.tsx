@@ -170,7 +170,6 @@ export default function SessionsPage() {
       <div className="max-w-7xl mx-auto">
         <div className="md:flex md:items-center md:justify-between">
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold tracking-tight text-slate-900">Quản lý lịch dạy</h1>
             <p className="text-sm text-slate-500">
               {monday.toLocaleDateString('vi-VN')} — {sunday.toLocaleDateString('vi-VN')}
             </p>

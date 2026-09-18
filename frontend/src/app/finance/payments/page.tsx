@@ -64,8 +64,7 @@ export default function PaymentsPage() {
         <Link href="/finance" className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700">
           <ArrowLeft className="h-4 w-4 mr-1" /> Quay lại Tài chính
         </Link>
-        <div className="mt-4 md:flex md:items-center md:justify-between">
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">Giao dịch (Đối soát)</h1>
+        <div className="mt-4 flex items-center justify-end">
           <p className="text-sm text-slate-600">
             Tổng đã xác nhận: <span className="font-semibold text-green-600">{formatVND(totalConfirmed)}</span>
           </p>

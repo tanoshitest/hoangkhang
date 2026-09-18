@@ -75,7 +75,6 @@ export default function NewReceivablePage() {
         <Link href="/finance" className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700">
           <ArrowLeft className="h-4 w-4 mr-1" /> Quay lại Tài chính
         </Link>
-        <h1 className="mt-4 text-xl font-bold tracking-tight text-slate-900">Tạo khoản phải thu</h1>
 
         {error && <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">{error}</div>}
 

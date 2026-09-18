@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PageHeader } from '@/components/AppShell';
 import UsersPanel from '@/components/admin/UsersPanel';
 
 export default function StaffPage() {
@@ -31,10 +30,6 @@ export default function StaffPage() {
   return (
     <div>
       <div className="max-w-7xl mx-auto">
-        <PageHeader
-          title="Quản lý nhân viên"
-          description="Tạo tài khoản, phân vai trò và quản lý truy cập cho nhân viên"
-        />
         <UsersPanel />
       </div>
     </div>

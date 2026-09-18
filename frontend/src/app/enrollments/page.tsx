@@ -121,24 +121,17 @@ export default function EnrollmentsPage() {
   return (
     <div>
       <div className="max-w-7xl mx-auto">
-        <div className="md:flex md:items-center md:justify-between">
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold tracking-tight text-slate-900">Quản lý tuyển sinh</h1>
-            <p className="text-sm text-slate-500">Ghi danh vào khóa học</p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <SalesTabs />
           </div>
-          <div className="mt-4 flex md:mt-0 md:ml-4">
-            <button 
-              onClick={() => router.push('/enrollments/new')}
-              className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
-            >
-              <Plus className="-ml-1 mr-2 h-5 w-5" />
-              Đăng ký mới
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-4">
-          <SalesTabs />
+          <button
+            onClick={() => router.push('/enrollments/new')}
+            className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
+          >
+            <Plus className="-ml-1 mr-1.5 h-4 w-4" />
+            Đăng ký mới
+          </button>
         </div>
 
         {/* Search and Filter */}

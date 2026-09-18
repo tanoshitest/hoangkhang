@@ -110,19 +110,14 @@ export default function CreateStudentPage() {
     <div>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center">
-            <button
-              onClick={() => router.push('/students')}
-              className="mr-4 p-2 text-slate-400 hover:text-slate-600"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-slate-900">Thêm Học viên mới</h1>
-              <p className="text-sm text-slate-500">Tạo hồ sơ học viên</p>
-            </div>
-          </div>
+        <div className="mb-6">
+          <button
+            onClick={() => router.push('/students')}
+            className="p-2 -ml-2 text-slate-400 hover:text-slate-600"
+            aria-label="Quay lại"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Form */}

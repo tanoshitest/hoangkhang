@@ -68,10 +68,8 @@ export default function Dashboard() {
   return (
     <div>
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-xl font-bold tracking-tight text-slate-900">Tổng quan</h1>
-
         {/* Main stats */}
-        <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {statCards.map((card) => (
             <Link key={card.title} href={card.href} className="bg-white overflow-hidden border border-slate-200 shadow-sm rounded-xl hover:shadow-md transition-shadow">
               <div className="p-5">

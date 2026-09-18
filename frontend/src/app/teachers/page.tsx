@@ -114,21 +114,6 @@ export default function TeachersPage() {
   return (
     <div>
       <div className="max-w-7xl mx-auto">
-        <div className="md:flex md:items-center md:justify-between">
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold tracking-tight text-slate-900">Quản lý giáo viên</h1>
-            <p className="text-sm text-slate-500">Hồ sơ giáo viên và phân công giảng dạy</p>
-          </div>
-          <div className="mt-4 flex md:mt-0 md:ml-4">
-            <button
-              onClick={() => setShowForm(!showForm)}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
-            >
-              <Plus className="-ml-1 mr-2 h-4 w-4" />
-              Thêm giáo viên
-            </button>
-          </div>
-        </div>
 
         {/* Create Form */}
         {showForm && (
@@ -228,9 +213,18 @@ export default function TeachersPage() {
         {/* Teachers Table */}
         <Card className="mt-6 overflow-hidden">
           <CardHeader className="flex-col items-start gap-3">
-            <div>
-              <CardTitle>Danh sách giáo viên ({filtered.length})</CardTitle>
-              <CardDescription>Bấm vào tên giáo viên để xem hồ sơ chi tiết.</CardDescription>
+            <div className="flex w-full items-start justify-between gap-4">
+              <div>
+                <CardTitle>Danh sách giáo viên ({filtered.length})</CardTitle>
+                <CardDescription>Bấm vào tên giáo viên để xem hồ sơ chi tiết.</CardDescription>
+              </div>
+              <button
+                onClick={() => setShowForm(!showForm)}
+                className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
+              >
+                <Plus className="-ml-1 mr-1.5 h-4 w-4" />
+                Thêm giáo viên
+              </button>
             </div>
             <div className="relative w-full sm:max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />

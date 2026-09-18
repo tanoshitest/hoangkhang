@@ -85,25 +85,19 @@ export default function TrainingResultsPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="md:flex md:items-center md:justify-between">
-        <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">Báo cáo kết quả đào tạo</h1>
-          <p className="text-sm text-slate-500">Điểm đánh giá và kết quả học tập theo học viên</p>
-        </div>
-        <div className="mt-4 md:mt-0 md:ml-4">
-          <select
-            value={classId}
-            onChange={(e) => setClassId(e.target.value)}
-            className="border border-slate-300 rounded-lg py-2 px-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-          >
-            <option value="">Tất cả lớp</option>
-            {classes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.code}{c.course?.name ? ` — ${c.course.name}` : ''}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div className="mb-4 flex justify-end">
+        <select
+          value={classId}
+          onChange={(e) => setClassId(e.target.value)}
+          className="border border-slate-300 rounded-lg py-2 px-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        >
+          <option value="">Tất cả lớp</option>
+          {classes.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.code}{c.course?.name ? ` — ${c.course.name}` : ''}
+            </option>
+          ))}
+        </select>
       </div>
 
       {loading ? (

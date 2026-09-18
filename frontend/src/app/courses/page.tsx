@@ -116,26 +116,20 @@ export default function CoursesPage() {
   return (
     <div>
       <div className="max-w-7xl mx-auto">
-        <div className="md:flex md:items-center md:justify-between">
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold tracking-tight text-slate-900">Quản lý khóa học</h1>
-            <p className="text-sm text-slate-500">Chương trình đào tạo, giáo trình và học phí chuẩn</p>
-          </div>
-          <div className="mt-4 flex md:mt-0 md:ml-4 space-x-3">
-            <Link
-              href="/classes"
-              className="inline-flex items-center px-4 py-2 border border-slate-300 rounded-lg shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50"
-            >
-              Lớp học
-            </Link>
-            <button
-              onClick={() => setShowForm(!showForm)}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
-            >
-              <Plus className="-ml-1 mr-2 h-4 w-4" />
-              Thêm khóa học
-            </button>
-          </div>
+        <div className="flex justify-end gap-2">
+          <Link
+            href="/classes"
+            className="inline-flex items-center px-3 py-1.5 border border-slate-300 rounded-lg shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50"
+          >
+            Lớp học
+          </Link>
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
+          >
+            <Plus className="-ml-1 mr-1.5 h-4 w-4" />
+            Thêm khóa học
+          </button>
         </div>
 
         {/* Create Form */}

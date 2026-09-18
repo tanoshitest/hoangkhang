@@ -53,7 +53,6 @@ export default function DebtPage() {
         <Link href="/finance" className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700">
           <ArrowLeft className="h-4 w-4 mr-1" /> Quay lại Tài chính
         </Link>
-        <h1 className="mt-4 text-xl font-bold tracking-tight text-slate-900">Công nợ</h1>
 
         {loading ? (
           <p className="text-center py-8 text-sm text-slate-500">Đang tải...</p>

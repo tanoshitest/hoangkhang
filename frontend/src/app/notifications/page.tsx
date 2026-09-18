@@ -83,9 +83,9 @@ export default function NotificationsPage() {
     <div>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8">
         <div className="md:flex md:items-center md:justify-between">
-          <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center">
-            Thông báo {unread > 0 && <span className="ml-2 px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-700">{unread} chưa đọc</span>}
-          </h1>
+          <div className="flex-1 min-w-0">
+            {unread > 0 && <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">{unread} chưa đọc</span>}
+          </div>
           <div className="mt-4 md:mt-0 flex gap-2">
             <button onClick={scan} disabled={scanning}
               className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50">

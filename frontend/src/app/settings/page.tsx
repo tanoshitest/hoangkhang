@@ -50,9 +50,7 @@ export default function SettingsPage() {
   return (
     <div>
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-xl font-bold tracking-tight text-slate-900">Hệ thống</h1>
-
-        <div className="mt-6 border-b border-slate-200">
+        <div className="border-b border-slate-200">
           <nav className="-mb-px flex space-x-6 overflow-x-auto">
             {TABS.map((t) => (
               <button key={t.id} onClick={() => setTab(t.id)}

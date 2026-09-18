@@ -75,23 +75,18 @@ export default function ReportsPage() {
   return (
     <div>
       <div className="max-w-7xl mx-auto">
-        <div className="md:flex md:items-center md:justify-between">
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">Báo cáo</h1>
-          <div className="mt-4 md:mt-0 flex items-center gap-3">
-            {hasRange && (
-              <>
-                <input type="date" value={range.from} onChange={(e) => setRange({ ...range, from: e.target.value })}
-                  className="border border-slate-300 rounded-lg px-2 py-1.5 text-sm" />
-                <span className="text-slate-500 text-sm">→</span>
-                <input type="date" value={range.to} onChange={(e) => setRange({ ...range, to: e.target.value })}
-                  className="border border-slate-300 rounded-lg px-2 py-1.5 text-sm" />
-                <button onClick={fetchReport} className="px-3 py-1.5 bg-brand-600 text-white rounded-lg text-sm">Lọc</button>
-              </>
-            )}
+        {hasRange && (
+          <div className="mb-4 flex items-center justify-end gap-3">
+            <input type="date" value={range.from} onChange={(e) => setRange({ ...range, from: e.target.value })}
+              className="border border-slate-300 rounded-lg px-2 py-1.5 text-sm" />
+            <span className="text-slate-500 text-sm">→</span>
+            <input type="date" value={range.to} onChange={(e) => setRange({ ...range, to: e.target.value })}
+              className="border border-slate-300 rounded-lg px-2 py-1.5 text-sm" />
+            <button onClick={fetchReport} className="px-3 py-1.5 bg-brand-600 text-white rounded-lg text-sm">Lọc</button>
           </div>
-        </div>
+        )}
 
-        <div className="mt-6 border-b border-slate-200">
+        <div className="border-b border-slate-200">
           <nav className="-mb-px flex space-x-8 overflow-x-auto">
             {TABS.map((t) => (
               <button key={t.id} onClick={() => { setData(null); setLoading(true); setTab(t.id); }}

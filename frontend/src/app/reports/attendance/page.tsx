@@ -91,15 +91,8 @@ export default function AttendanceReportPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="md:flex md:items-center md:justify-between">
-        <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">Báo cáo chuyên cần</h1>
-          <p className="text-sm text-slate-500">Thống kê điểm danh theo học viên</p>
-        </div>
-      </div>
-
       {/* Filters */}
-      <div className="mt-4 flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3">
         <select
           value={classId}
           onChange={(e) => setClassId(e.target.value)}

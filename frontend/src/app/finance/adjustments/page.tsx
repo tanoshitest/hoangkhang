@@ -75,10 +75,9 @@ export default function AdjustmentsPage() {
         <Link href="/finance" className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700">
           <ArrowLeft className="h-4 w-4 mr-1" /> Quay lại Tài chính
         </Link>
-        <div className="mt-4 md:flex md:items-center md:justify-between">
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">Điều chỉnh thanh toán</h1>
+        <div className="mt-4 flex justify-end">
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-            className="mt-4 md:mt-0 border border-slate-300 rounded-lg px-3 py-1.5 text-sm">
+            className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm">
             <option value="">Tất cả</option>
             <option value="pending">Chờ duyệt</option>
             <option value="approved">Đã duyệt</option>
