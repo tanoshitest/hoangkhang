@@ -94,7 +94,7 @@ export default function ReportsPage() {
         <div className="mt-6 border-b border-slate-200">
           <nav className="-mb-px flex space-x-8 overflow-x-auto">
             {TABS.map((t) => (
-              <button key={t.id} onClick={() => setTab(t.id)}
+              <button key={t.id} onClick={() => { setData(null); setLoading(true); setTab(t.id); }}
                 className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
                   tab === t.id ? 'border-brand-500 text-brand-600' : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}>
@@ -172,19 +172,19 @@ function SalesReport({ data, onExport }: { data: any; onExport: () => void }) {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="bg-white border border-slate-200 shadow-sm rounded-lg p-6">
           <h3 className="text-md font-medium text-slate-900 mb-3">Theo nguồn</h3>
-          {Object.entries(data.bySource as Record<string, number>).map(([k, v]) => (
+          {Object.entries((data.bySource || {}) as Record<string, number>).map(([k, v]) => (
             <BarRow key={k} label={k} value={v} total={data.total} />
           ))}
         </div>
         <div className="bg-white border border-slate-200 shadow-sm rounded-lg p-6">
           <h3 className="text-md font-medium text-slate-900 mb-3">Theo trạng thái</h3>
-          {Object.entries(data.byStatus as Record<string, number>).map(([k, v]) => (
+          {Object.entries((data.byStatus || {}) as Record<string, number>).map(([k, v]) => (
             <BarRow key={k} label={STATUS_LABELS[k] || k} value={v} total={data.total} />
           ))}
         </div>
         <div className="bg-white border border-slate-200 shadow-sm rounded-lg p-6">
           <h3 className="text-md font-medium text-slate-900 mb-3">Theo người phụ trách</h3>
-          {Object.entries(data.byAssignee as Record<string, { total: number; converted: number }>).map(([k, v]) => (
+          {Object.entries((data.byAssignee || {}) as Record<string, { total: number; converted: number }>).map(([k, v]) => (
             <div key={k} className="flex justify-between py-1.5 text-sm">
               <span className="text-slate-600">{k}</span>
               <span className="font-medium">{v.total} lead • {v.converted} đăng ký</span>
@@ -193,10 +193,10 @@ function SalesReport({ data, onExport }: { data: any; onExport: () => void }) {
         </div>
         <div className="bg-white border border-slate-200 shadow-sm rounded-lg p-6">
           <h3 className="text-md font-medium text-slate-900 mb-3">Lý do không đăng ký</h3>
-          {Object.keys(data.notRegisteredReasons).length === 0 ? (
+          {Object.keys(data.notRegisteredReasons || {}).length === 0 ? (
             <p className="text-sm text-slate-500">Chưa có dữ liệu</p>
           ) : (
-            Object.entries(data.notRegisteredReasons as Record<string, number>).map(([k, v]) => (
+            Object.entries((data.notRegisteredReasons || {}) as Record<string, number>).map(([k, v]) => (
               <BarRow key={k} label={k} value={v} total={data.total} />
             ))
           )}
@@ -212,12 +212,12 @@ function StudentsReport({ data, onExport }: { data: any; onExport: () => void })
       <div className="flex justify-end"><ExportButton onClick={onExport} /></div>
       <div className="grid grid-cols-2 gap-5 sm:grid-cols-3">
         <Card title="Tổng học viên" value={data.total} />
-        <Card title="Đang học" value={data.byStatus.studying || 0} />
+        <Card title="Đang học" value={data.byStatus?.studying || 0} />
         <Card title="Đăng ký tiếp" value={data.reRegistered} sub="Học viên có >1 enrollment" />
       </div>
       <div className="bg-white border border-slate-200 shadow-sm rounded-lg p-6">
         <h3 className="text-md font-medium text-slate-900 mb-3">Theo trạng thái</h3>
-        {Object.entries(data.byStatus as Record<string, number>).map(([k, v]) => (
+        {Object.entries((data.byStatus || {}) as Record<string, number>).map(([k, v]) => (
           <BarRow key={k} label={STATUS_LABELS[k] || k} value={v} total={data.total} />
         ))}
       </div>
@@ -230,9 +230,9 @@ function ClassesReport({ data }: { data: any }) {
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
         <Card title="Tổng lớp" value={data.total} />
-        <Card title="Đang tuyển" value={data.byStatus.recruiting || 0} />
-        <Card title="Đang học" value={data.byStatus.studying || 0} />
-        <Card title="Kết thúc" value={data.byStatus.finished || 0} />
+        <Card title="Đang tuyển" value={data.byStatus?.recruiting || 0} />
+        <Card title="Đang học" value={data.byStatus?.studying || 0} />
+        <Card title="Kết thúc" value={data.byStatus?.finished || 0} />
       </div>
       <div className="bg-white border border-slate-200 shadow-sm rounded-lg overflow-hidden">
         <table className="min-w-full divide-y divide-slate-200">
@@ -247,7 +247,7 @@ function ClassesReport({ data }: { data: any }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {data.classes.map((c: any) => (
+            {(data.classes || []).map((c: any) => (
               <tr key={c.id}>
                 <td className="px-4 py-3 text-sm font-medium text-slate-900">{c.code}</td>
                 <td className="px-4 py-3 text-sm text-slate-600">{c.course}</td>
@@ -265,24 +265,26 @@ function ClassesReport({ data }: { data: any }) {
 }
 
 function AcademicReport({ data }: { data: any }) {
+  const attendance = data.attendance || { rate: 0, total: 0, byStatus: {} };
+  const warnings = data.warnings || { byStatus: {}, byType: {} };
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-5 sm:grid-cols-3">
-        <Card title="Tỷ lệ chuyên cần" value={`${data.attendance.rate}%`} sub={`${data.attendance.total} lượt điểm danh`} />
+        <Card title="Tỷ lệ chuyên cần" value={`${attendance.rate}%`} sub={`${attendance.total} lượt điểm danh`} />
         <Card title="Điểm trung bình" value={data.avgScore !== null ? `${data.avgScore}/10` : '-'} sub={`${data.assessmentCount} bài đánh giá`} />
-        <Card title="Cảnh báo mở" value={data.warnings.byStatus.new || 0} />
+        <Card title="Cảnh báo mở" value={warnings.byStatus.new || 0} />
       </div>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="bg-white border border-slate-200 shadow-sm rounded-lg p-6">
           <h3 className="text-md font-medium text-slate-900 mb-3">Điểm danh theo trạng thái</h3>
-          {Object.entries(data.attendance.byStatus as Record<string, number>).map(([k, v]) => (
-            <BarRow key={k} label={STATUS_LABELS[k] || k} value={v} total={data.attendance.total} />
+          {Object.entries(attendance.byStatus as Record<string, number>).map(([k, v]) => (
+            <BarRow key={k} label={STATUS_LABELS[k] || k} value={v} total={attendance.total} />
           ))}
         </div>
         <div className="bg-white border border-slate-200 shadow-sm rounded-lg p-6">
           <h3 className="text-md font-medium text-slate-900 mb-3">Cảnh báo theo loại</h3>
-          {Object.entries(data.warnings.byType as Record<string, number>).map(([k, v]) => (
-            <BarRow key={k} label={k} value={v} total={Object.values(data.warnings.byType).reduce((a: number, b: any) => a + b, 0)} />
+          {Object.entries(warnings.byType as Record<string, number>).map(([k, v]) => (
+            <BarRow key={k} label={k} value={v} total={Object.values(warnings.byType).reduce((a: number, b: any) => a + b, 0)} />
           ))}
         </div>
       </div>
@@ -291,7 +293,7 @@ function AcademicReport({ data }: { data: any }) {
 }
 
 function FinanceReport({ data, onExport }: { data: any; onExport: () => void }) {
-  const days = Object.entries(data.byDay as Record<string, number>).sort();
+  const days = Object.entries((data.byDay || {}) as Record<string, number>).sort();
   const max = Math.max(...days.map(([, v]) => v), 1);
   return (
     <div className="space-y-6">
@@ -322,7 +324,7 @@ function FinanceReport({ data, onExport }: { data: any; onExport: () => void }) 
         </div>
         <div className="bg-white border border-slate-200 shadow-sm rounded-lg p-6">
           <h3 className="text-md font-medium text-slate-900 mb-3">Theo phương thức</h3>
-          {Object.entries(data.byMethod as Record<string, number>).map(([k, v]) => (
+          {Object.entries((data.byMethod || {}) as Record<string, number>).map(([k, v]) => (
             <div key={k} className="flex justify-between py-1.5 text-sm">
               <span className="text-slate-600 capitalize">{k.replace('_', ' ')}</span>
               <span className="font-medium">{formatVND(v)}</span>
@@ -351,10 +353,10 @@ function TeachersReport({ data }: { data: any }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {data.data.length === 0 ? (
+            {(data.data || []).length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-500">Chưa có dữ liệu giờ dạy</td></tr>
             ) : (
-              data.data.map((t: any) => (
+              (data.data || []).map((t: any) => (
                 <tr key={t.teacher.id}>
                   <td className="px-4 py-3 text-sm font-medium text-slate-900">{t.teacher.name} <span className="text-xs text-slate-500">({t.teacher.code})</span></td>
                   <td className="px-4 py-3 text-sm text-slate-900">{t.sessions}</td>
