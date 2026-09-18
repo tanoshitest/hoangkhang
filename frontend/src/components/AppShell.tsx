@@ -228,9 +228,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         {/* User footer */}
         <div className="shrink-0 border-t border-slate-200 p-1.5">
           <div className="flex items-center gap-1.5 rounded-md px-1 py-1">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-100 text-[11px] font-semibold text-brand-700">
-              {user.name.charAt(0).toUpperCase()}
-            </span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-[12px] font-medium leading-tight text-slate-900">{user.name}</p>
               <p className="truncate text-[10px] leading-tight text-slate-500">
