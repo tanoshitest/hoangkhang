@@ -185,130 +185,131 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   })();
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden">
-      {/* Top bar — full width */}
-      <header className="z-40 flex h-11 shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-3 print:hidden">
-        {!desktop && (
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100"
-            aria-label="Mở menu"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
+    <div className="flex h-dvh overflow-hidden">
+      {/* Sidebar — cột trái full height */}
+      <aside
+        className={cn(
+          'z-50 flex w-56 shrink-0 flex-col border-r border-slate-200 bg-white print:hidden',
+          desktop
+            ? 'relative h-full'
+            : cn('fixed inset-y-0 left-0 transition-transform', open ? 'translate-x-0' : '-translate-x-full'),
         )}
-        <h1 className="truncate text-[15px] font-semibold tracking-tight text-slate-900">
-          {pageTitle}
-        </h1>
-        <div className="ml-auto flex items-center gap-1.5">
-          <Link
-            href="/notifications"
-            className="relative rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-brand-600"
-            title="Thông báo"
-          >
-            <Bell className="h-4 w-4" />
-            {unreadCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-semibold text-white">
-                {unreadCount > 99 ? '99+' : unreadCount}
-              </span>
-            )}
-          </Link>
-          <div className="mx-1 h-5 w-px bg-slate-200" />
-          <div className="min-w-0 text-right leading-tight">
-            <p className="truncate text-[12px] font-medium text-slate-900">{user.name}</p>
-            <p className="truncate text-[10px] text-slate-500">
-              {user.roles.map(r => ROLE_LABELS[r] || r).join(', ')}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-red-600"
-            title="Đăng xuất"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
-        </div>
-      </header>
-
-      <div className="flex min-h-0 flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <aside
-          className={cn(
-            'z-50 flex w-56 shrink-0 flex-col border-r border-slate-200 bg-white print:hidden',
-            desktop
-              ? 'relative h-full'
-              : cn('fixed inset-y-0 left-0 transition-transform', open ? 'translate-x-0' : '-translate-x-full'),
+      >
+        {/* Logo — góc trên trái, cao bằng top bar */}
+        <div className="flex h-11 shrink-0 items-center gap-2 border-b border-slate-200 px-3">
+          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-brand-600 text-white">
+            <GraduationCap className="h-3.5 w-3.5" />
+          </span>
+          <span className="text-[13px] font-bold tracking-tight text-slate-900">CRM Hoàng Khang</span>
+          {!desktop && (
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="ml-auto rounded-md p-1 text-slate-500 hover:bg-slate-100"
+              aria-label="Đóng menu"
+            >
+              <X className="h-5 w-5" />
+            </button>
           )}
-        >
-          {/* Logo */}
-          <div className="flex h-10 shrink-0 items-center gap-2 border-b border-slate-200 px-3">
-            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-brand-600 text-white">
-              <GraduationCap className="h-3.5 w-3.5" />
-            </span>
-            <span className="text-[13px] font-bold tracking-tight text-slate-900">CRM Hoàng Khang</span>
-            {!desktop && (
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="ml-auto rounded-md p-1 text-slate-500 hover:bg-slate-100"
-                aria-label="Đóng menu"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            )}
+        </div>
+
+        {/* Nav */}
+        <nav className="min-h-0 flex-1 space-y-2 overflow-y-auto px-2 py-1.5">
+          {groups.map(group => (
+            <div key={group.title ?? group.items[0]?.href}>
+              {group.title && (
+                <p className="px-2 pb-0.5 text-[9px] font-semibold uppercase tracking-wider text-slate-400">
+                  {group.title}
+                </p>
+              )}
+              <ul>
+                {group.items.map(item => {
+                  const Icon = item.icon;
+                  const active = isActive(item);
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        onClick={() => setOpen(false)}
+                        className={cn(
+                          'flex items-center gap-1.5 rounded-md px-2 py-1 text-[12px] font-medium leading-none transition-colors',
+                          active
+                            ? 'bg-brand-50 text-brand-700'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
+                        )}
+                      >
+                        <Icon className={cn('h-3.5 w-3.5', active && 'text-brand-600')} />
+                        {item.label}
+                        {item.href === '/notifications' && unreadCount > 0 && (
+                          <span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-semibold text-white">
+                            {unreadCount > 99 ? '99+' : unreadCount}
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </nav>
+      </aside>
+
+      {/* Overlay khi mở sidebar mobile */}
+      {!desktop && open && (
+        <div
+          className="fixed inset-0 z-40 bg-slate-900/40"
+          onClick={() => setOpen(false)}
+        />
+      )}
+
+      {/* Cột phải: top bar + nội dung */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Top bar — chỉ phủ phần nội dung bên phải */}
+        <header className="z-40 flex h-11 shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-3 print:hidden">
+          {!desktop && (
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className="rounded-md p-1.5 text-slate-600 hover:bg-slate-100"
+              aria-label="Mở menu"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+          )}
+          <h1 className="truncate text-[15px] font-semibold tracking-tight text-slate-900">
+            {pageTitle}
+          </h1>
+          <div className="ml-auto flex items-center gap-1.5">
+            <Link
+              href="/notifications"
+              className="relative rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-brand-600"
+              title="Thông báo"
+            >
+              <Bell className="h-4 w-4" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-semibold text-white">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </Link>
+            <div className="mx-1 h-5 w-px bg-slate-200" />
+            <div className="min-w-0 text-right leading-tight">
+              <p className="truncate text-[12px] font-medium text-slate-900">{user.name}</p>
+              <p className="truncate text-[10px] text-slate-500">
+                {user.roles.map(r => ROLE_LABELS[r] || r).join(', ')}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-red-600"
+              title="Đăng xuất"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
           </div>
-
-          {/* Nav */}
-          <nav className="min-h-0 flex-1 space-y-2 overflow-y-auto px-2 py-1.5">
-            {groups.map(group => (
-              <div key={group.title ?? group.items[0]?.href}>
-                {group.title && (
-                  <p className="px-2 pb-0.5 text-[9px] font-semibold uppercase tracking-wider text-slate-400">
-                    {group.title}
-                  </p>
-                )}
-                <ul>
-                  {group.items.map(item => {
-                    const Icon = item.icon;
-                    const active = isActive(item);
-                    return (
-                      <li key={item.href}>
-                        <Link
-                          href={item.href}
-                          onClick={() => setOpen(false)}
-                          className={cn(
-                            'flex items-center gap-1.5 rounded-md px-2 py-1 text-[12px] font-medium leading-none transition-colors',
-                            active
-                              ? 'bg-brand-50 text-brand-700'
-                              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
-                          )}
-                        >
-                          <Icon className={cn('h-3.5 w-3.5', active && 'text-brand-600')} />
-                          {item.label}
-                          {item.href === '/notifications' && unreadCount > 0 && (
-                            <span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-semibold text-white">
-                              {unreadCount > 99 ? '99+' : unreadCount}
-                            </span>
-                          )}
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ))}
-          </nav>
-        </aside>
-
-        {/* Overlay khi mở sidebar mobile */}
-        {!desktop && open && (
-          <div
-            className="fixed inset-0 z-40 bg-slate-900/40"
-            onClick={() => setOpen(false)}
-          />
-        )}
+        </header>
 
         {/* Nội dung */}
         <main
