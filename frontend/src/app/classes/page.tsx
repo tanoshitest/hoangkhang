@@ -262,7 +262,7 @@ export default function ClassesPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700">Link meeting</label>
+                <label className="block text-sm font-medium text-slate-700">Link họp</label>
                 <input
                   type="text"
                   value={formData.meetingLink}

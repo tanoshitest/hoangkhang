@@ -212,7 +212,7 @@ export default function SessionDetailPage() {
   if (!session) {
     return (
       <div className="text-center py-12">
-        <h3 className="text-sm font-medium text-slate-900">Session không tồn tại</h3>
+        <h3 className="text-sm font-medium text-slate-900">Buổi học không tồn tại</h3>
         <button
           onClick={() => router.push('/sessions')}
           className="mt-4 inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"

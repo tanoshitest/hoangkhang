@@ -234,7 +234,7 @@ export default function ClassDetailPage() {
             </div>
           </div>
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-            <div className="text-sm text-slate-500">Sessions</div>
+            <div className="text-sm text-slate-500">Buổi học</div>
             <div className="text-xl font-bold tracking-tight text-slate-900">{classData.sessions.length}</div>
           </div>
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">

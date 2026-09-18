@@ -52,14 +52,14 @@ export default function Dashboard() {
   if (!data) return <div className="text-center py-12 text-slate-500">Không tải được dữ liệu</div>;
 
   const statCards = [
-    { title: 'Lead mới', value: data.leads.new, icon: Users, color: 'bg-brand-500', href: '/leads' },
+    { title: 'KH tiềm năng mới', value: data.leads.new, icon: Users, color: 'bg-brand-500', href: '/leads' },
     { title: 'Học viên đang học', value: data.students.studying, icon: GraduationCap, color: 'bg-green-500', href: '/students' },
     { title: 'Lớp đang học', value: data.classes.studying, icon: BookOpen, color: 'bg-purple-500', href: '/classes' },
     { title: 'Buổi học hôm nay', value: data.today.sessions, icon: Calendar, color: 'bg-indigo-500', href: '/sessions' },
   ];
 
   const alertCards = [
-    { title: 'Follow-up quá hạn', value: data.leads.followUpOverdue, icon: AlertTriangle, color: 'bg-red-500', href: '/leads' },
+    { title: 'Chăm sóc quá hạn', value: data.leads.followUpOverdue, icon: AlertTriangle, color: 'bg-red-500', href: '/leads' },
     { title: 'Công nợ quá hạn', value: data.finance.overdueCount, sub: formatVND(data.finance.overdueAmount), icon: CreditCard, color: 'bg-red-500', href: '/finance/debt' },
     { title: 'Chờ xếp lớp', value: data.students.waitingClass, icon: Clock, color: 'bg-orange-500', href: '/students' },
     { title: 'Cảnh báo học tập', value: data.warnings.open, icon: AlertTriangle, color: 'bg-yellow-500', href: '/warnings' },
@@ -68,7 +68,7 @@ export default function Dashboard() {
   return (
     <div>
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-xl font-bold tracking-tight text-slate-900">Dashboard</h1>
+        <h1 className="text-xl font-bold tracking-tight text-slate-900">Tổng quan</h1>
 
         {/* Main stats */}
         <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">

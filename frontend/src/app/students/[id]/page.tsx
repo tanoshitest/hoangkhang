@@ -201,7 +201,7 @@ export default function StudentDetailPage() {
   const tabs = [
     { id: 'overview', name: 'Tổng quan' },
     { id: 'history', name: 'Lịch sử học' },
-    { id: 'enrollment', name: 'Enrollment' },
+    { id: 'enrollment', name: 'Ghi danh' },
     { id: 'attendance', name: 'Chuyên cần' },
     { id: 'results', name: 'Kết quả' },
     { id: 'finance', name: 'Học phí' },
@@ -451,13 +451,13 @@ export default function StudentDetailPage() {
           {activeTab === 'enrollment' && (
             <div className="bg-white border border-slate-200 shadow-sm overflow-hidden sm:rounded-xl">
               <div className="px-4 py-5 sm:px-6">
-                <h3 className="text-lg leading-6 font-medium text-slate-900">Enrollment</h3>
+                <h3 className="text-lg leading-6 font-medium text-slate-900">Ghi danh</h3>
               </div>
               <div className="border-t border-slate-200">
                 {student.enrollments.length === 0 ? (
                   <div className="text-center py-12">
                     <BookOpen className="mx-auto h-12 w-12 text-slate-400" />
-                    <h3 className="mt-2 text-sm font-medium text-slate-900">Chưa có enrollment nào</h3>
+                    <h3 className="mt-2 text-sm font-medium text-slate-900">Chưa có ghi danh nào</h3>
                     <p className="mt-1 text-sm text-slate-500">Đăng ký học viên vào khóa học.</p>
                   </div>
                 ) : (

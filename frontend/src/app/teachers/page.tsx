@@ -93,9 +93,9 @@ export default function TeachersPage() {
 
   const coopLabel = (type: string) => {
     const labels: Record<string, string> = {
-      fulltime: 'Full-time',
-      parttime: 'Part-time',
-      freelance: 'Freelance',
+      fulltime: 'Toàn thời gian',
+      parttime: 'Bán thời gian',
+      freelance: 'Cộng tác viên',
     };
     return labels[type] || type;
   };
@@ -167,9 +167,9 @@ export default function TeachersPage() {
                   onChange={(e) => setFormData({ ...formData, cooperationType: e.target.value })}
                   className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
                 >
-                  <option value="fulltime">Full-time</option>
-                  <option value="parttime">Part-time</option>
-                  <option value="freelance">Freelance</option>
+                  <option value="fulltime">Toàn thời gian</option>
+                  <option value="parttime">Bán thời gian</option>
+                  <option value="freelance">Cộng tác viên</option>
                 </select>
               </div>
               <div>

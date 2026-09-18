@@ -91,7 +91,7 @@ export default function CreateStudentPage() {
         alert(error.error || 'Failed to create student');
       }
     } catch (error) {
-      alert('Network error');
+      alert('Lỗi kết nối mạng');
     } finally {
       setLoading(false);
     }

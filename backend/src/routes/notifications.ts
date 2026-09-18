@@ -57,6 +57,12 @@ router.post('/scan', async (req: AuthenticatedRequest, res: Response) => {
     const threeDays = new Date(now.getTime() + 3 * 86400000);
     const created: any[] = [];
 
+    const WARNING_TYPE_LABELS: Record<string, string> = {
+      consecutive_absent: 'vắng liên tiếp', low_attendance: 'điểm danh thấp',
+      below_standard: 'dưới chuẩn', no_homework: 'không làm BTVN',
+      dropout_risk: 'nguy cơ nghỉ',
+    };
+
     // Helper: create notification for all admin/manager users, dedupe by title+day
     const notify = async (type: string, title: string, content: string) => {
       const users = await prisma.user.findMany({
@@ -80,7 +86,7 @@ router.post('/scan', async (req: AuthenticatedRequest, res: Response) => {
       take: 10,
     });
     for (const l of staleLeads) {
-      await notify('lead_reminder', `Lead ${l.name} chưa được liên hệ`, `Lead ${l.code} - ${l.phone} tạo ngày ${l.createdAt.toISOString().slice(0, 10)} chưa có hoạt động.`);
+      await notify('lead_reminder', `KH tiềm năng ${l.name} chưa được liên hệ`, `KH tiềm năng ${l.code} - ${l.phone} tạo ngày ${l.createdAt.toISOString().slice(0, 10)} chưa có hoạt động.`);
     }
 
     // Rule 2: Follow-up đến hạn/quá hạn
@@ -93,8 +99,8 @@ router.post('/scan', async (req: AuthenticatedRequest, res: Response) => {
       const overdue = f.date < now;
       await notify(
         'followup_due',
-        `Follow-up ${overdue ? 'quá hạn' : 'sắp đến hạn'}: ${f.lead.name}`,
-        `Lead ${f.lead.code} - hẹn ${f.date.toISOString().slice(0, 10)}${f.content ? ` - ${f.content}` : ''}`
+        `Chăm sóc ${overdue ? 'quá hạn' : 'sắp đến hạn'}: ${f.lead.name}`,
+        `KH tiềm năng ${f.lead.code} - hẹn ${f.date.toISOString().slice(0, 10)}${f.content ? ` - ${f.content}` : ''}`
       );
     }
 
@@ -146,7 +152,7 @@ router.post('/scan', async (req: AuthenticatedRequest, res: Response) => {
     for (const w of staleWarnings) {
       await notify(
         'warning_stale',
-        `Cảnh báo ${w.type} của ${w.student.name} chưa xử lý`,
+        `Cảnh báo ${WARNING_TYPE_LABELS[w.type] || w.type} của ${w.student.name} chưa xử lý`,
         `Tạo ngày ${w.createdAt.toISOString().slice(0, 10)} - đã ${Math.floor((now.getTime() - w.createdAt.getTime()) / 86400000)} ngày.`
       );
     }

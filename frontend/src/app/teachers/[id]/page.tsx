@@ -236,8 +236,8 @@ export default function TeacherDetailPage({ params }: { params: Promise<{ id: st
                     <select value={rateForm.classType} onChange={(e) => setRateForm({ ...rateForm, classType: e.target.value })}
                       className="mt-1 block w-full border border-slate-300 rounded-lg px-2 py-1.5 text-sm">
                       <option value="">Tất cả</option>
-                      <option value="online">Online</option>
-                      <option value="offline">Offline</option>
+                      <option value="online">Trực tuyến</option>
+                      <option value="offline">Trực tiếp</option>
                       <option value="trial">Học thử</option>
                     </select>
                   </div>

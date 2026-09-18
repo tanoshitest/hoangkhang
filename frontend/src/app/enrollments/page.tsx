@@ -122,7 +122,7 @@ export default function EnrollmentsPage() {
       <div className="max-w-7xl mx-auto">
         <div className="md:flex md:items-center md:justify-between">
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold tracking-tight text-slate-900">Enrollment</h1>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">Ghi danh</h1>
           </div>
           <div className="mt-4 flex md:mt-0 md:ml-4">
             <button 
@@ -142,7 +142,7 @@ export default function EnrollmentsPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Tìm kiếm enrollment..."
+                placeholder="Tìm kiếm ghi danh..."
                 className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-200 w-full"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -216,7 +216,7 @@ export default function EnrollmentsPage() {
         {enrollments.length === 0 && (
           <div className="text-center py-12">
             <BookOpen className="mx-auto h-12 w-12 text-slate-400" />
-            <h3 className="mt-2 text-sm font-medium text-slate-900">Chưa có enrollment nào</h3>
+            <h3 className="mt-2 text-sm font-medium text-slate-900">Chưa có ghi danh nào</h3>
             <p className="mt-1 text-sm text-slate-500">
               Bắt đầu bằng cách đăng ký học viên vào khóa học.
             </p>

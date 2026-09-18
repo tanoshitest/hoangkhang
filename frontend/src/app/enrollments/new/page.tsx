@@ -94,7 +94,7 @@ export default function NewEnrollmentPage() {
         alert(error.error || 'Failed to create enrollment');
       }
     } catch (error) {
-      alert('Network error');
+      alert('Lỗi kết nối mạng');
     } finally {
       setLoading(false);
     }

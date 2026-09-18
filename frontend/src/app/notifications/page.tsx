@@ -14,8 +14,8 @@ interface Notification {
 }
 
 const TYPE_LABELS: Record<string, { label: string; color: string }> = {
-  lead_reminder: { label: 'Lead', color: 'bg-brand-100 text-brand-800' },
-  followup_due: { label: 'Follow-up', color: 'bg-yellow-100 text-yellow-800' },
+  lead_reminder: { label: 'KH tiềm năng', color: 'bg-brand-100 text-brand-800' },
+  followup_due: { label: 'Chăm sóc', color: 'bg-yellow-100 text-yellow-800' },
   class_starting: { label: 'Lớp học', color: 'bg-purple-100 text-purple-800' },
   class_ending: { label: 'Lớp học', color: 'bg-indigo-100 text-indigo-800' },
   debt_due: { label: 'Công nợ', color: 'bg-red-100 text-red-800' },

@@ -161,8 +161,8 @@ export default function LeadKanbanPage() {
                 <ArrowLeft className="h-5 w-5" />
               </button>
               <div>
-                <h1 className="text-xl font-bold tracking-tight text-slate-900">Kanban Board</h1>
-                <p className="text-sm text-slate-500">Kéo thả để chuyển trạng thái lead</p>
+                <h1 className="text-xl font-bold tracking-tight text-slate-900">Bảng Kanban</h1>
+                <p className="text-sm text-slate-500">Kéo thả để chuyển trạng thái khách hàng</p>
               </div>
             </div>
             <button
@@ -170,12 +170,12 @@ export default function LeadKanbanPage() {
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
             >
               <Plus className="-ml-1 mr-2 h-4 w-4" />
-              Thêm Lead
+              Thêm KH tiềm năng
             </button>
           </div>
         </div>
 
-        {/* Kanban Board */}
+        {/* Bảng Kanban */}
         <div className="overflow-x-auto">
           <div className="flex space-x-4 min-w-max pb-6">
             {columns.map((column) => (
@@ -202,7 +202,7 @@ export default function LeadKanbanPage() {
                   >
                     {column.leads.length === 0 ? (
                       <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-lg">
-                        <div className="text-slate-400 text-sm">Thả lead vào đây</div>
+                        <div className="text-slate-400 text-sm">Thả khách hàng vào đây</div>
                       </div>
                     ) : (
                       column.leads.map((lead) => (

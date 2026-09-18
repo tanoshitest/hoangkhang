@@ -56,7 +56,7 @@ export default function CreateLeadPage() {
         );
 
         if (existingLead) {
-          setDuplicateWarning(`Lead đã tồn tại: ${existingLead.name} (${existingLead.code})`);
+          setDuplicateWarning(`KH tiềm năng đã tồn tại: ${existingLead.name} (${existingLead.code})`);
         } else {
           setDuplicateWarning('');
         }
@@ -89,10 +89,10 @@ export default function CreateLeadPage() {
         router.push('/leads');
       } else {
         const error = await response.json();
-        alert(error.error || 'Failed to create lead');
+        alert(error.error || 'Tạo KH tiềm năng thất bại');
       }
     } catch (error) {
-      alert('Network error');
+      alert('Lỗi kết nối mạng');
     } finally {
       setLoading(false);
     }
@@ -138,7 +138,7 @@ export default function CreateLeadPage() {
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-slate-900">Thêm Lead mới</h1>
+              <h1 className="text-xl font-bold tracking-tight text-slate-900">Thêm KH tiềm năng mới</h1>
               <p className="text-sm text-slate-500">Tạo hồ sơ khách hàng tiềm năng</p>
             </div>
           </div>
@@ -410,7 +410,7 @@ export default function CreateLeadPage() {
                 className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-50"
               >
                 <Save className="-ml-1 mr-2 h-4 w-4" />
-                {loading ? 'Đang lưu...' : 'Lưu Lead'}
+                {loading ? 'Đang lưu...' : 'Lưu KH tiềm năng'}
               </button>
             </div>
           </form>

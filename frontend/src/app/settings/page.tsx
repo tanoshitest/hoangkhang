@@ -12,8 +12,8 @@ const TABS: { id: Tab; name: string; icon: any }[] = [
   { id: 'users', name: 'Người dùng', icon: Users },
   { id: 'roles', name: 'Vai trò', icon: Shield },
   { id: 'statuses', name: 'Trạng thái', icon: Tag },
-  { id: 'import', name: 'Import', icon: Upload },
-  { id: 'audit', name: 'Audit Log', icon: FileText },
+  { id: 'import', name: 'Nhập dữ liệu', icon: Upload },
+  { id: 'audit', name: 'Nhật ký', icon: FileText },
   { id: 'settings', name: 'Cấu hình', icon: SettingsIcon },
 ];
 
@@ -263,6 +263,10 @@ function StatusesTab() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ module: 'lead', status: '', displayName: '', color: '#6B7280' });
   const modules = ['lead', 'student', 'class', 'session', 'payment', 'warning'];
+  const moduleLabels: Record<string, string> = {
+    lead: 'KH tiềm năng', student: 'Học viên', class: 'Lớp học',
+    session: 'Buổi học', payment: 'Thanh toán', warning: 'Cảnh báo',
+  };
 
   useEffect(() => { fetchStatuses(); }, [moduleFilter]);
 
@@ -309,26 +313,26 @@ function StatusesTab() {
       <div className="flex justify-between items-center mb-4">
         <select value={moduleFilter} onChange={(e) => setModuleFilter(e.target.value)}
           className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm">
-          <option value="">Tất cả modules</option>
-          {modules.map(m => <option key={m} value={m}>{m}</option>)}
+          <option value="">Tất cả phân hệ</option>
+          {modules.map(m => <option key={m} value={m}>{moduleLabels[m] || m}</option>)}
         </select>
         <button onClick={() => setShowForm(!showForm)}
           className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-brand-600 rounded-lg hover:bg-brand-700">
-          <Plus className="h-4 w-4 mr-1" /> Thêm status
+          <Plus className="h-4 w-4 mr-1" /> Thêm trạng thái
         </button>
       </div>
 
       {showForm && (
         <form onSubmit={createStatus} className="mb-6 bg-brand-50 border border-brand-200 rounded-lg p-4 grid grid-cols-2 gap-4 sm:grid-cols-5">
           <div>
-            <label className="block text-xs text-slate-600">Module</label>
+            <label className="block text-xs text-slate-600">Phân hệ</label>
             <select value={form.module} onChange={(e) => setForm({ ...form, module: e.target.value })}
               className="mt-1 block w-full border border-slate-300 rounded-lg px-2 py-1.5 text-sm">
-              {modules.map(m => <option key={m} value={m}>{m}</option>)}
+              {modules.map(m => <option key={m} value={m}>{moduleLabels[m] || m}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs text-slate-600">Status key *</label>
+            <label className="block text-xs text-slate-600">Mã trạng thái *</label>
             <input type="text" required value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}
               className="mt-1 block w-full border border-slate-300 rounded-lg px-2 py-1.5 text-sm" placeholder="vd: vip" />
           </div>
@@ -352,8 +356,8 @@ function StatusesTab() {
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Module</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Phân hệ</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Trạng thái</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Tên hiển thị</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Loại</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Hiển thị</th>
@@ -362,7 +366,7 @@ function StatusesTab() {
           <tbody className="divide-y divide-slate-200">
             {statuses.map((s) => (
               <tr key={s.id} className={!s.isActive ? 'opacity-50' : ''}>
-                <td className="px-4 py-3 text-sm text-slate-600">{s.module}</td>
+                <td className="px-4 py-3 text-sm text-slate-600">{moduleLabels[s.module] || s.module}</td>
                 <td className="px-4 py-3 text-sm font-mono text-slate-900">{s.status}</td>
                 <td className="px-4 py-3 text-sm text-slate-900">
                   <span className="inline-flex items-center gap-1.5">
@@ -435,14 +439,14 @@ function ImportTab() {
   return (
     <div className="space-y-6">
       <div className="bg-white border border-slate-200 shadow-sm rounded-lg p-6">
-        <h3 className="text-md font-medium text-slate-900 mb-4">Import dữ liệu từ CSV</h3>
+        <h3 className="text-md font-medium text-slate-900 mb-4">Nhập dữ liệu từ CSV</h3>
         <div className="flex gap-4 mb-4">
           {(['leads', 'students'] as const).map(e => (
             <button key={e} onClick={() => { setEntity(e); setPreview(null); setResult(null); }}
               className={`px-4 py-2 rounded-lg text-sm font-medium ${
                 entity === e ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-700'
               }`}>
-              {e === 'leads' ? 'Leads' : 'Học viên'}
+              {e === 'leads' ? 'KH tiềm năng' : 'Học viên'}
             </button>
           ))}
         </div>
@@ -474,7 +478,7 @@ function ImportTab() {
           {preview && preview.valid > 0 && (
             <button onClick={doCommit} disabled={loading}
               className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm disabled:opacity-50">
-              Import {preview.valid} dòng hợp lệ
+              Nhập {preview.valid} dòng hợp lệ
             </button>
           )}
         </div>
@@ -503,7 +507,7 @@ function ImportTab() {
                     <td className="px-3 py-2 text-slate-900">{p.data.phone || '-'}</td>
                     <td className="px-3 py-2">
                       {p.valid ? (
-                        <span className="text-green-600 flex items-center text-xs"><CheckCircle className="h-3 w-3 mr-1" /> OK</span>
+                        <span className="text-green-600 flex items-center text-xs"><CheckCircle className="h-3 w-3 mr-1" />Hợp lệ</span>
                       ) : (
                         <span className="text-red-600 flex items-center text-xs"><XCircle className="h-3 w-3 mr-1" /> {p.errors.join(', ')}</span>
                       )}
@@ -518,7 +522,7 @@ function ImportTab() {
 
       {result && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-          <h3 className="text-md font-medium text-green-800">Import hoàn tất</h3>
+          <h3 className="text-md font-medium text-green-800">Nhập dữ liệu hoàn tất</h3>
           <p className="text-sm text-green-700 mt-1">
             Đã tạo {result.created} • Bỏ qua {result.skipped}
             {result.errors?.length > 0 && ` • ${result.errors.length} lỗi`}
@@ -530,6 +534,20 @@ function ImportTab() {
 }
 
 // ==================== AUDIT ====================
+
+const ENTITY_LABELS: Record<string, string> = {
+  user: 'Người dùng', lead: 'KH tiềm năng', student: 'Học viên',
+  payment: 'Thanh toán', status: 'Trạng thái', setting: 'Cấu hình',
+  import: 'Nhập dữ liệu', session: 'Buổi học', class: 'Lớp học',
+  receivable: 'Phải thu', adjustment: 'Điều chỉnh', payroll: 'Bảng lương',
+};
+
+const ACTION_LABELS: Record<string, string> = {
+  create: 'Tạo', update: 'Cập nhật', delete: 'Xóa', import: 'Nhập',
+  confirm: 'Xác nhận', cancel: 'Hủy', approve: 'Duyệt', reject: 'Từ chối',
+  reset_password: 'Đặt lại mật khẩu', convert: 'Chuyển đổi', backup: 'Sao lưu',
+  pay: 'Thanh toán', generate: 'Tạo',
+};
 
 function AuditTab() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -553,9 +571,9 @@ function AuditTab() {
       <div className="mb-4">
         <select value={entityFilter} onChange={(e) => setEntityFilter(e.target.value)}
           className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm">
-          <option value="">Tất cả entities</option>
-          {['user', 'lead', 'student', 'payment', 'status', 'setting', 'import'].map(e => (
-            <option key={e} value={e}>{e}</option>
+          <option value="">Tất cả đối tượng</option>
+          {Object.entries(ENTITY_LABELS).map(([k, v]) => (
+            <option key={k} value={k}>{v}</option>
           ))}
         </select>
       </div>
@@ -564,7 +582,7 @@ function AuditTab() {
         {loading ? (
           <p className="text-center py-8 text-sm text-slate-500">Đang tải...</p>
         ) : logs.length === 0 ? (
-          <p className="text-center py-8 text-sm text-slate-500">Chưa có audit log nào</p>
+          <p className="text-center py-8 text-sm text-slate-500">Chưa có nhật ký nào</p>
         ) : (
           <ul className="divide-y divide-slate-200">
             {logs.map((log) => (
@@ -575,7 +593,7 @@ function AuditTab() {
                       {log.user?.name || log.userId.slice(0, 8)}
                     </span>
                     <span className="text-sm text-slate-600 ml-2">
-                      {log.action} {log.entity}
+                      {ACTION_LABELS[log.action] || log.action} {ENTITY_LABELS[log.entity] || log.entity}
                     </span>
                     <span className="text-xs text-slate-400 ml-2 font-mono">{log.entityId.slice(0, 8)}</span>
                   </div>

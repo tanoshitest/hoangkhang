@@ -22,14 +22,14 @@ type NavGroup = { title?: string; items: NavItem[] };
 
 const NAV: NavGroup[] = [
   {
-    items: [{ href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard }],
+    items: [{ href: '/dashboard', label: 'Tổng quan', icon: LayoutDashboard }],
   },
   {
     title: 'Tuyển sinh',
     items: [
-      { href: '/leads', label: 'Leads', icon: Users },
-      { href: '/leads/kanban', label: 'Pipeline', icon: Kanban },
-      { href: '/enrollments', label: 'Enrollment', icon: ClipboardList },
+      { href: '/leads', label: 'Khách hàng tiềm năng', icon: Users },
+      { href: '/leads/kanban', label: 'Phễu bán hàng', icon: Kanban },
+      { href: '/enrollments', label: 'Ghi danh', icon: ClipboardList },
     ],
   },
   {

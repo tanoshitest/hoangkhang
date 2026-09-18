@@ -153,7 +153,7 @@ export default function LeadDetailPage() {
   };
 
   const convertLead = async () => {
-    if (!confirm('Chuyển lead này thành học viên?')) return;
+    if (!confirm('Chuyển KH tiềm năng này thành học viên?')) return;
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/leads/${params.id}/convert`, {
       method: 'POST',
       headers: authHeaders(),
@@ -227,7 +227,7 @@ export default function LeadDetailPage() {
   if (!lead) {
     return (
       <div className="text-center py-12">
-        <h3 className="mt-2 text-sm font-medium text-slate-900">Lead không tồn tại</h3>
+        <h3 className="mt-2 text-sm font-medium text-slate-900">Không tìm thấy khách hàng tiềm năng</h3>
         <button
           onClick={() => router.push('/leads')}
           className="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
@@ -284,7 +284,7 @@ export default function LeadDetailPage() {
             {[
               { id: 'overview', name: 'Tổng quan' },
               { id: 'activities', name: 'Hoạt động' },
-              { id: 'followups', name: 'Follow-up' },
+              { id: 'followups', name: 'Chăm sóc' },
               { id: 'trials', name: 'Kiểm tra/Học thử' },
               { id: 'history', name: 'Lịch sử' },
             ].map((tab) => (
@@ -420,7 +420,7 @@ export default function LeadDetailPage() {
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-sm font-medium text-slate-500">Ngày nhận lead</dt>
+                        <dt className="text-sm font-medium text-slate-500">Ngày nhận thông tin</dt>
                         <dd className="mt-1 text-sm text-slate-900">
                           {new Date(lead.createdAt).toLocaleDateString('vi-VN')}
                         </dd>
@@ -505,7 +505,7 @@ export default function LeadDetailPage() {
                   <div className="text-center py-12">
                     <MessageSquare className="mx-auto h-12 w-12 text-slate-400" />
                     <h3 className="mt-2 text-sm font-medium text-slate-900">Chưa có hoạt động nào</h3>
-                    <p className="mt-1 text-sm text-slate-500">Bắt đầu ghi nhận trao đổi với lead.</p>
+                    <p className="mt-1 text-sm text-slate-500">Bắt đầu ghi nhận trao đổi với khách hàng.</p>
                   </div>
                 ) : (
                   <ul className="divide-y divide-slate-200">
@@ -535,7 +535,7 @@ export default function LeadDetailPage() {
           {activeTab === 'followups' && (
             <div className="bg-white border border-slate-200 shadow-sm overflow-hidden sm:rounded-xl">
               <div className="px-4 py-5 sm:px-6 flex items-center justify-between">
-                <h3 className="text-lg leading-6 font-medium text-slate-900">Lịch follow-up</h3>
+                <h3 className="text-lg leading-6 font-medium text-slate-900">Lịch chăm sóc</h3>
                 <button
                   onClick={() => setShowFollowUpForm(!showFollowUpForm)}
                   className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
@@ -557,7 +557,7 @@ export default function LeadDetailPage() {
                     <input
                       type="text"
                       required
-                      placeholder="Nội dung follow-up..."
+                      placeholder="Nội dung chăm sóc..."
                       value={followUpForm.content}
                       onChange={(e) => setFollowUpForm({ ...followUpForm, content: e.target.value })}
                       className="md:col-span-2 border border-slate-300 rounded-lg py-2 px-3 text-sm"
@@ -576,8 +576,8 @@ export default function LeadDetailPage() {
                 {lead.followUps.length === 0 ? (
                   <div className="text-center py-12">
                     <Calendar className="mx-auto h-12 w-12 text-slate-400" />
-                    <h3 className="mt-2 text-sm font-medium text-slate-900">Chưa có lịch follow-up nào</h3>
-                    <p className="mt-1 text-sm text-slate-500">Đặt lịch chăm sóc lead tiếp theo.</p>
+                    <h3 className="mt-2 text-sm font-medium text-slate-900">Chưa có lịch chăm sóc nào</h3>
+                    <p className="mt-1 text-sm text-slate-500">Đặt lịch chăm sóc khách hàng tiếp theo.</p>
                   </div>
                 ) : (
                   <ul className="divide-y divide-slate-200">
@@ -713,7 +713,7 @@ export default function LeadDetailPage() {
                 <div className="text-center py-12">
                   <Clock className="mx-auto h-12 w-12 text-slate-400" />
                   <h3 className="mt-2 text-sm font-medium text-slate-900">Lịch sử thay đổi</h3>
-                  <p className="mt-1 text-sm text-slate-500">Chức năng audit log sẽ được triển khai sau.</p>
+                  <p className="mt-1 text-sm text-slate-500">Chức năng nhật ký sẽ được triển khai sau.</p>
                 </div>
               </div>
             </div>

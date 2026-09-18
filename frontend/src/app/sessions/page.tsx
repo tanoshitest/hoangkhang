@@ -201,7 +201,7 @@ export default function SessionsPage() {
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
             >
               <Plus className="-ml-1 mr-2 h-4 w-4" />
-              Thêm Session
+              Thêm buổi học
             </button>
           </div>
         </div>
@@ -209,7 +209,7 @@ export default function SessionsPage() {
         {/* Create Form */}
         {showForm && (
           <div className="mt-6 bg-white border border-slate-200 shadow-sm sm:rounded-lg p-6">
-            <h3 className="text-base font-semibold text-slate-900 mb-4">Tạo session mới</h3>
+            <h3 className="text-base font-semibold text-slate-900 mb-4">Tạo buổi học mới</h3>
             {error && (
               <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3 flex items-start">
                 <AlertTriangle className="h-5 w-5 text-red-400 mr-2 flex-shrink-0" />
@@ -278,7 +278,7 @@ export default function SessionsPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700">Link meeting</label>
+                <label className="block text-sm font-medium text-slate-700">Link họp</label>
                 <input
                   type="text"
                   value={formData.meetingLink}
@@ -367,8 +367,8 @@ export default function SessionsPage() {
         {sessions.length === 0 && (
           <div className="text-center py-12 bg-white rounded-xl border border-slate-200 shadow-sm mt-6">
             <Calendar className="mx-auto h-12 w-12 text-slate-400" />
-            <h3 className="mt-2 text-sm font-medium text-slate-900">Không có session nào tuần này</h3>
-            <p className="mt-1 text-sm text-slate-500">Tạo session hoặc chuyển sang tuần khác.</p>
+            <h3 className="mt-2 text-sm font-medium text-slate-900">Không có buổi học nào tuần này</h3>
+            <p className="mt-1 text-sm text-slate-500">Tạo buổi học hoặc chuyển sang tuần khác.</p>
           </div>
         )}
       </div>
