@@ -150,28 +150,6 @@ export default function Dashboard() {
             <Link href="/students" className="mt-4 inline-block text-sm text-brand-600 hover:underline">Xem chi tiết →</Link>
           </div>
         </div>
-
-        {/* Quick actions */}
-        <h2 className="mt-8 text-base font-semibold text-slate-900 mb-4">Thao tác nhanh</h2>
-        <div className="bg-white border border-slate-200 shadow-sm overflow-hidden sm:rounded-xl">
-          <ul className="divide-y divide-slate-200">
-            {[
-              { href: '/leads/new', label: '+ Tạo Lead mới', desc: 'Thêm khách hàng tiềm năng' },
-              { href: '/students/new', label: '+ Thêm Học viên', desc: 'Tạo hồ sơ học viên mới' },
-              { href: '/finance/receivables/new', label: '+ Tạo khoản phải thu', desc: 'Ghi nhận học phí cần thu' },
-              { href: '/payroll', label: '+ Tạo bảng lương', desc: 'Đối soát giờ dạy giáo viên' },
-            ].map((a) => (
-              <li key={a.href}>
-                <Link href={a.href} className="block hover:bg-slate-50 px-4 py-4 sm:px-6">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-brand-600">{a.label}</span>
-                    <span className="text-sm text-slate-500">{a.desc}</span>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
       </div>
     </div>
   );
