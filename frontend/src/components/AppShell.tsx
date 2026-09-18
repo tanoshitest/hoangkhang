@@ -43,10 +43,10 @@ const NAV: NavGroup[] = [
   {
     title: 'Đào tạo',
     items: [
-      { href: '/courses', label: 'Khóa học', icon: BookOpen },
-      { href: '/classes', label: 'Lớp học', icon: School },
-      { href: '/sessions', label: 'Lịch dạy', icon: Calendar },
-      { href: '/warnings', label: 'Cảnh báo', icon: AlertTriangle },
+      { href: '/courses', label: 'Quản lý khóa học', icon: BookOpen },
+      { href: '/classes', label: 'Quản lý lớp học', icon: School },
+      { href: '/sessions', label: 'Quản lý lịch dạy', icon: Calendar },
+      { href: '/warnings', label: 'Cảnh báo học viên', icon: AlertTriangle },
     ],
   },
   {

@@ -105,7 +105,7 @@ export default function WarningsPage() {
       <div className="max-w-7xl mx-auto">
         <div className="md:flex md:items-center md:justify-between">
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold tracking-tight text-slate-900">Cảnh báo học tập</h1>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">Cảnh báo học viên</h1>
             <p className="text-sm text-slate-500">Theo dõi học viên có nguy cơ</p>
           </div>
           <div className="mt-4 flex md:mt-0 md:ml-4">
