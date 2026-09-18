@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   LayoutDashboard, GraduationCap, BookOpen, Calendar, CreditCard,
   BarChart3, Settings, LogOut, Menu, X, Bell, AlertTriangle, Target,
-  UserCheck, Wallet, Kanban, School, UserCog, ClipboardCheck, TrendingUp, LucideIcon,
+  UserCheck, Wallet, Kanban, School, UserCog, ClipboardCheck, TrendingUp, HandCoins, LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -50,6 +50,7 @@ const NAV: NavGroup[] = [
     title: 'Tài chính',
     items: [
       { href: '/finance', label: 'Tài chính', icon: CreditCard },
+      { href: '/finance/receivables', label: 'Quản lý học phí', icon: HandCoins },
       { href: '/payroll', label: 'Bảng lương', icon: Wallet },
     ],
   },
