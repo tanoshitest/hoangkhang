@@ -16,6 +16,8 @@ import financeRoutes from './routes/finance';
 import payrollRoutes from './routes/payroll';
 import reportRoutes from './routes/reports';
 import notificationRoutes from './routes/notifications';
+import adminRoutes from './routes/admin';
+import importRoutes from './routes/import';
 import { authenticateToken } from './middleware/auth';
 import { errorHandler } from './middleware/errorHandler';
 
@@ -48,6 +50,8 @@ app.use('/api/finance', authenticateToken, financeRoutes);
 app.use('/api/payroll', authenticateToken, payrollRoutes);
 app.use('/api/reports', authenticateToken, reportRoutes);
 app.use('/api/notifications', authenticateToken, notificationRoutes);
+app.use('/api/admin', authenticateToken, adminRoutes);
+app.use('/api/import', authenticateToken, importRoutes);
 
 // Error handling
 app.use(errorHandler);
