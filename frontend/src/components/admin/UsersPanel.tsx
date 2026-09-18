@@ -1,8 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Users, Plus, Eye, EyeOff, KeyRound } from 'lucide-react';
+import { useState, useEffect, Fragment } from 'react';
+import { Plus, Eye, EyeOff, KeyRound } from 'lucide-react';
 import { authHeaders, API_URL } from '@/lib/utils';
+import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Table, THead, TBody, TR, TH, TD, EmptyRow } from '@/components/ui/table';
 
 const ALL_ROLES = ['admin', 'manager', 'sales', 'academic', 'teacher', 'accountant'];
 const ROLE_LABELS: Record<string, string> = {
@@ -135,55 +138,82 @@ export default function UsersPanel() {
         </form>
       )}
 
-      <div className="bg-white border border-slate-200 shadow-sm overflow-hidden sm:rounded-xl">
-        <ul className="divide-y divide-slate-200">
-          {users.map((u) => (
-            <li key={u.id} className="px-4 py-4 sm:px-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-slate-900">{u.name}</span>
-                    {u.roles.map((r: string) => (
-                      <span key={r} className="px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800">
-                        {ROLE_LABELS[r] || r}
-                      </span>
-                    ))}
-                    {!u.isActive && <span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-500">Vô hiệu</span>}
-                  </div>
-                  <p className="text-sm text-slate-500 mt-1">{u.email}{u.phone && ` • ${u.phone}`}</p>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => { setResetId(u.id); setResetPassword(''); }}
-                    className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg text-slate-700 bg-slate-100 hover:bg-slate-200">
-                    <KeyRound className="h-4 w-4 mr-1" /> Đặt lại MK
-                  </button>
-                  <button onClick={() => toggleActive(u)}
-                    className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg ${
-                      u.isActive ? 'text-red-700 bg-red-50 hover:bg-red-100' : 'text-green-700 bg-green-50 hover:bg-green-100'
-                    }`}>
-                    {u.isActive ? <><EyeOff className="h-4 w-4 mr-1" /> Vô hiệu</> : <><Eye className="h-4 w-4 mr-1" /> Kích hoạt</>}
-                  </button>
-                </div>
-              </div>
-              {resetId === u.id && (
-                <form onSubmit={submitReset} className="mt-3 flex gap-2 items-center bg-slate-50 border border-slate-200 rounded-lg p-3">
-                  <input type="password" required minLength={6} placeholder="Mật khẩu mới (≥6 ký tự)"
-                    value={resetPassword} onChange={(e) => setResetPassword(e.target.value)}
-                    className="flex-1 border border-slate-300 rounded-lg px-3 py-1.5 text-sm" />
-                  <button type="submit" className="px-3 py-1.5 bg-brand-600 text-white rounded-lg text-xs font-medium">Lưu</button>
-                  <button type="button" onClick={() => setResetId(null)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-xs">Hủy</button>
-                </form>
-              )}
-            </li>
-          ))}
-        </ul>
-        {users.length === 0 && (
-          <div className="text-center py-12">
-            <Users className="mx-auto h-12 w-12 text-slate-400" />
-            <p className="mt-2 text-sm text-slate-500">Chưa có người dùng nào</p>
-          </div>
-        )}
-      </div>
+      <Card className="overflow-hidden">
+        <CardHeader>
+          <CardTitle>Danh sách người dùng ({users.length})</CardTitle>
+          <CardDescription>Tài khoản đăng nhập và vai trò trong hệ thống.</CardDescription>
+        </CardHeader>
+        <Table>
+          <THead>
+            <TR>
+              <TH className="w-10">#</TH>
+              <TH>Họ tên</TH>
+              <TH>Email</TH>
+              <TH>SĐT</TH>
+              <TH>Vai trò</TH>
+              <TH>Trạng thái</TH>
+              <TH className="text-right">Thao tác</TH>
+            </TR>
+          </THead>
+          <TBody>
+            {users.length === 0 ? (
+              <EmptyRow colSpan={7}>Chưa có người dùng nào.</EmptyRow>
+            ) : (
+              users.map((u, index) => (
+                <Fragment key={u.id}>
+                  <TR>
+                    <TD className="text-xs text-slate-400">{index + 1}</TD>
+                    <TD className="font-medium text-slate-900 whitespace-nowrap">{u.name}</TD>
+                    <TD className="whitespace-nowrap">{u.email}</TD>
+                    <TD className="whitespace-nowrap">
+                      {u.phone || <span className="text-slate-400">—</span>}
+                    </TD>
+                    <TD>
+                      <div className="flex flex-wrap gap-1">
+                        {u.roles.map((r: string) => (
+                          <Badge key={r} tone="brand">{ROLE_LABELS[r] || r}</Badge>
+                        ))}
+                      </div>
+                    </TD>
+                    <TD>
+                      <Badge tone={u.isActive ? 'green' : 'slate'}>
+                        {u.isActive ? 'Hoạt động' : 'Vô hiệu'}
+                      </Badge>
+                    </TD>
+                    <TD className="w-px whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button onClick={() => { setResetId(u.id); setResetPassword(''); }}
+                          className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-lg text-slate-700 bg-slate-100 hover:bg-slate-200">
+                          <KeyRound className="h-3.5 w-3.5 mr-1" /> Đặt lại MK
+                        </button>
+                        <button onClick={() => toggleActive(u)}
+                          className={`inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-lg ${
+                            u.isActive ? 'text-red-700 bg-red-50 hover:bg-red-100' : 'text-green-700 bg-green-50 hover:bg-green-100'
+                          }`}>
+                          {u.isActive ? <><EyeOff className="h-3.5 w-3.5 mr-1" /> Vô hiệu</> : <><Eye className="h-3.5 w-3.5 mr-1" /> Kích hoạt</>}
+                        </button>
+                      </div>
+                    </TD>
+                  </TR>
+                  {resetId === u.id && (
+                    <tr>
+                      <td colSpan={7} className="bg-slate-50 px-4 py-3">
+                        <form onSubmit={submitReset} className="flex gap-2 items-center">
+                          <input type="password" required minLength={6} placeholder="Mật khẩu mới (≥6 ký tự)"
+                            value={resetPassword} onChange={(e) => setResetPassword(e.target.value)}
+                            className="flex-1 max-w-xs border border-slate-300 rounded-lg px-3 py-1.5 text-sm" />
+                          <button type="submit" className="px-3 py-1.5 bg-brand-600 text-white rounded-lg text-xs font-medium">Lưu</button>
+                          <button type="button" onClick={() => setResetId(null)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-xs">Hủy</button>
+                        </form>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              ))
+            )}
+          </TBody>
+        </Table>
+      </Card>
     </div>
   );
 }

@@ -1,8 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { BookOpen, Plus, Search, Users, Clock, DollarSign } from 'lucide-react';
+import Link from 'next/link';
+import { Plus, Search } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Table, THead, TBody, TR, TH, TD, EmptyRow } from '@/components/ui/table';
+import { formatVND } from '@/lib/utils';
 
 interface Course {
   id: string;
@@ -21,7 +25,6 @@ interface Course {
 }
 
 export default function CoursesPage() {
-  const router = useRouter();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -99,7 +102,7 @@ export default function CoursesPage() {
 
   const formatFee = (fee?: number) => {
     if (!fee) return '—';
-    return new Intl.NumberFormat('vi-VN').format(fee) + 'đ';
+    return formatVND(fee);
   };
 
   if (loading) {
@@ -116,21 +119,21 @@ export default function CoursesPage() {
         <div className="md:flex md:items-center md:justify-between">
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold tracking-tight text-slate-900">Quản lý khóa học</h1>
+            <p className="text-sm text-slate-500">Chương trình đào tạo, giáo trình và học phí chuẩn</p>
           </div>
           <div className="mt-4 flex md:mt-0 md:ml-4 space-x-3">
-            <button
-              onClick={() => router.push('/classes')}
+            <Link
+              href="/classes"
               className="inline-flex items-center px-4 py-2 border border-slate-300 rounded-lg shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50"
             >
-              <Users className="mr-2 h-4 w-4" />
               Lớp học
-            </button>
+            </Link>
             <button
               onClick={() => setShowForm(!showForm)}
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
             >
               <Plus className="-ml-1 mr-2 h-4 w-4" />
-              Thêm Khóa học
+              Thêm khóa học
             </button>
           </div>
         </div>
@@ -230,83 +233,79 @@ export default function CoursesPage() {
           </div>
         )}
 
-        {/* Search */}
-        <div className="mt-6">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Tìm kiếm khóa học..."
-              className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-200 w-full"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-        </div>
+        {/* Courses Table */}
+        <Card className="mt-6 overflow-hidden">
+          <CardHeader className="flex-col items-start gap-3">
+            <div>
+              <CardTitle>Danh sách khóa học ({filteredCourses.length})</CardTitle>
+              <CardDescription>Bấm vào tên khóa học để xem chi tiết và danh sách lớp.</CardDescription>
+            </div>
+            <div className="relative w-full sm:max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Tìm theo tên, mã khóa học..."
+                className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+          </CardHeader>
 
-        {/* Course Cards */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCourses.map((course) => (
-            <div
-              key={course.id}
-              className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => router.push(`/courses/${course.id}`)}
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800">
-                    {course.level}
-                  </span>
-                  <h3 className="mt-2 text-base font-semibold text-slate-900">{course.name}</h3>
-                  <p className="text-sm text-slate-500">{course.code}</p>
-                </div>
-                <BookOpen className="h-6 w-6 text-slate-400" />
-              </div>
-
-              {course.textbook && (
-                <p className="mt-2 text-sm text-slate-600">📖 {course.textbook}</p>
+          <Table>
+            <THead>
+              <TR>
+                <TH className="w-10">#</TH>
+                <TH>Mã</TH>
+                <TH>Khóa học</TH>
+                <TH>Level</TH>
+                <TH>Giáo trình</TH>
+                <TH className="text-center">Buổi</TH>
+                <TH className="text-center">Giờ</TH>
+                <TH className="text-right">Học phí</TH>
+                <TH className="text-center">Lớp</TH>
+                <TH>Trạng thái</TH>
+              </TR>
+            </THead>
+            <TBody>
+              {filteredCourses.length === 0 ? (
+                <EmptyRow colSpan={10}>Chưa có khóa học nào.</EmptyRow>
+              ) : (
+                filteredCourses.map((course, index) => (
+                  <TR key={course.id}>
+                    <TD className="text-xs text-slate-400">{index + 1}</TD>
+                    <TD className="whitespace-nowrap font-mono text-xs text-slate-500">
+                      {course.code}
+                    </TD>
+                    <TD>
+                      <Link
+                        href={`/courses/${course.id}`}
+                        className="font-medium text-brand-700 hover:underline"
+                      >
+                        {course.name}
+                      </Link>
+                    </TD>
+                    <TD>
+                      <Badge tone="brand">{course.level}</Badge>
+                    </TD>
+                    <TD className="whitespace-nowrap">
+                      {course.textbook || <span className="text-slate-400">—</span>}
+                    </TD>
+                    <TD className="text-center">{course.totalSessions || '—'}</TD>
+                    <TD className="text-center">{course.totalHours ? `${course.totalHours}h` : '—'}</TD>
+                    <TD className="text-right whitespace-nowrap">{formatFee(course.standardFee)}</TD>
+                    <TD className="text-center">{course._count?.classes ?? 0}</TD>
+                    <TD>
+                      <Badge tone={course.isActive ? 'green' : 'slate'}>
+                        {course.isActive ? 'Hoạt động' : 'Ngừng'}
+                      </Badge>
+                    </TD>
+                  </TR>
+                ))
               )}
-
-              <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                <div className="bg-slate-50 rounded p-2">
-                  <div className="text-lg font-semibold text-slate-900">{course._count.classes}</div>
-                  <div className="text-xs text-slate-500">Lớp</div>
-                </div>
-                <div className="bg-slate-50 rounded p-2">
-                  <div className="text-lg font-semibold text-slate-900">{course._count.enrollments}</div>
-                  <div className="text-xs text-slate-500">Đăng ký</div>
-                </div>
-                <div className="bg-slate-50 rounded p-2">
-                  <div className="text-lg font-semibold text-slate-900">{course.totalSessions || '—'}</div>
-                  <div className="text-xs text-slate-500">Buổi</div>
-                </div>
-              </div>
-
-              <div className="mt-4 flex items-center justify-between text-sm">
-                <span className="text-slate-600 flex items-center">
-                  <Clock className="h-4 w-4 mr-1" />
-                  {course.totalHours ? `${course.totalHours}h` : '—'}
-                </span>
-                <span className="font-medium text-brand-600 flex items-center">
-                  <DollarSign className="h-4 w-4 mr-1" />
-                  {formatFee(course.standardFee)}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {filteredCourses.length === 0 && (
-          <div className="mt-8 bg-white border border-slate-200 shadow-sm overflow-hidden sm:rounded-xl">
-            <div className="text-center py-12">
-              <BookOpen className="mx-auto h-12 w-12 text-slate-400" />
-              <h3 className="mt-2 text-sm font-medium text-slate-900">Chưa có khóa học nào</h3>
-              <p className="mt-1 text-sm text-slate-500">
-                Bắt đầu bằng cách tạo khóa học đầu tiên.
-              </p>
-            </div>
-          </div>
-        )}
+            </TBody>
+          </Table>
+        </Card>
       </div>
     </div>
   );

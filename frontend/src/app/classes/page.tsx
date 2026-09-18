@@ -1,8 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Search, Users, Calendar, AlertTriangle, User } from 'lucide-react';
+import Link from 'next/link';
+import { Plus, Search, AlertTriangle } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { StatusBadge } from '@/components/ui/badge';
+import { Table, THead, TBody, TR, TH, TD, EmptyRow } from '@/components/ui/table';
+import { formatDate } from '@/lib/utils';
 
 interface ClassItem {
   id: string;
@@ -34,7 +38,6 @@ interface Teacher {
 }
 
 export default function ClassesPage() {
-  const router = useRouter();
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -110,30 +113,6 @@ export default function ClassesPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      planned: 'bg-slate-100 text-slate-800',
-      recruiting: 'bg-brand-100 text-brand-800',
-      full: 'bg-yellow-100 text-yellow-800',
-      studying: 'bg-green-100 text-green-800',
-      paused: 'bg-orange-100 text-orange-800',
-      finished: 'bg-slate-100 text-slate-600',
-    };
-    return colors[status] || 'bg-slate-100 text-slate-800';
-  };
-
-  const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = {
-      planned: 'Dự kiến',
-      recruiting: 'Tuyển sinh',
-      full: 'Đã đủ',
-      studying: 'Đang học',
-      paused: 'Tạm dừng',
-      finished: 'Kết thúc',
-    };
-    return labels[status] || status;
-  };
-
   const filtered = classes.filter(c =>
     c.code.toLowerCase().includes(search.toLowerCase()) ||
     c.course.name.toLowerCase().includes(search.toLowerCase())
@@ -153,20 +132,21 @@ export default function ClassesPage() {
         <div className="md:flex md:items-center md:justify-between">
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold tracking-tight text-slate-900">Quản lý lớp học</h1>
+            <p className="text-sm text-slate-500">Danh sách lớp theo khóa học, giáo viên và sĩ số</p>
           </div>
           <div className="mt-4 flex md:mt-0 md:ml-4 space-x-3">
-            <button
-              onClick={() => router.push('/courses')}
+            <Link
+              href="/courses"
               className="inline-flex items-center px-4 py-2 border border-slate-300 rounded-lg shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50"
             >
               Khóa học
-            </button>
+            </Link>
             <button
               onClick={() => setShowForm(!showForm)}
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
             >
               <Plus className="-ml-1 mr-2 h-4 w-4" />
-              Thêm Lớp
+              Thêm lớp
             </button>
           </div>
         </div>
@@ -291,74 +271,73 @@ export default function ClassesPage() {
           </div>
         )}
 
-        {/* Search */}
-        <div className="mt-6">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Tìm kiếm lớp..."
-              className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-200 w-full"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-        </div>
-
         {/* Classes Table */}
-        <div className="mt-6 bg-white border border-slate-200 shadow-sm overflow-hidden sm:rounded-xl">
-          <ul className="divide-y divide-slate-200">
-            {filtered.map((cls) => (
-              <li key={cls.id}>
-                <div
-                  className="px-4 py-4 flex items-center justify-between cursor-pointer hover:bg-slate-50"
-                  onClick={() => router.push(`/classes/${cls.id}`)}
-                >
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="h-10 w-10 rounded-full bg-brand-100 flex items-center justify-center">
-                        <Users className="h-5 w-5 text-brand-600" />
-                      </div>
-                    </div>
-                    <div className="ml-4">
-                      <div className="text-sm font-medium text-slate-900">
-                        {cls.code} — {cls.course.name}
-                      </div>
-                      <div className="text-sm text-slate-500 flex items-center space-x-3">
-                        <span className="flex items-center">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          {new Date(cls.startDate).toLocaleDateString('vi-VN')} → {new Date(cls.endDate).toLocaleDateString('vi-VN')}
-                        </span>
-                        {cls.mainTeacher && (
-                          <span className="flex items-center">
-                            <User className="h-3 w-3 mr-1" />
-                            {cls.mainTeacher.name}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <div className="text-sm text-slate-500">
-                      {cls._count.classMembers}{cls.maxStudents ? `/${cls.maxStudents}` : ''} HV
-                    </div>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(cls.status)}`}>
-                      {getStatusLabel(cls.status)}
-                    </span>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <Card className="mt-6 overflow-hidden">
+          <CardHeader className="flex-col items-start gap-3">
+            <div>
+              <CardTitle>Danh sách lớp ({filtered.length})</CardTitle>
+              <CardDescription>Bấm vào mã lớp để xem chi tiết và quản lý buổi học.</CardDescription>
+            </div>
+            <div className="relative w-full sm:max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Tìm theo mã lớp, khóa học..."
+                className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+          </CardHeader>
 
-        {filtered.length === 0 && (
-          <div className="text-center py-12 bg-white rounded-xl border border-slate-200 shadow-sm mt-6">
-            <Users className="mx-auto h-12 w-12 text-slate-400" />
-            <h3 className="mt-2 text-sm font-medium text-slate-900">Chưa có lớp nào</h3>
-            <p className="mt-1 text-sm text-slate-500">Tạo lớp đầu tiên cho khóa học.</p>
-          </div>
-        )}
+          <Table>
+            <THead>
+              <TR>
+                <TH className="w-10">#</TH>
+                <TH>Mã lớp</TH>
+                <TH>Khóa học</TH>
+                <TH>GV chính</TH>
+                <TH>Thời gian</TH>
+                <TH className="text-center">Sĩ số</TH>
+                <TH className="text-center">Buổi</TH>
+                <TH>Trạng thái</TH>
+              </TR>
+            </THead>
+            <TBody>
+              {filtered.length === 0 ? (
+                <EmptyRow colSpan={8}>Chưa có lớp nào.</EmptyRow>
+              ) : (
+                filtered.map((cls, index) => (
+                  <TR key={cls.id}>
+                    <TD className="text-xs text-slate-400">{index + 1}</TD>
+                    <TD>
+                      <Link
+                        href={`/classes/${cls.id}`}
+                        className="font-medium text-brand-700 hover:underline whitespace-nowrap"
+                      >
+                        {cls.code}
+                      </Link>
+                    </TD>
+                    <TD className="whitespace-nowrap">{cls.course.name}</TD>
+                    <TD className="whitespace-nowrap">
+                      {cls.mainTeacher?.name || <span className="text-slate-400">—</span>}
+                    </TD>
+                    <TD className="whitespace-nowrap text-xs text-slate-500">
+                      {formatDate(cls.startDate)} → {formatDate(cls.endDate)}
+                    </TD>
+                    <TD className="text-center">
+                      {cls._count?.classMembers ?? 0}{cls.maxStudents ? `/${cls.maxStudents}` : ''}
+                    </TD>
+                    <TD className="text-center">{cls._count?.sessions ?? 0}</TD>
+                    <TD>
+                      <StatusBadge value={cls.status} />
+                    </TD>
+                  </TR>
+                ))
+              )}
+            </TBody>
+          </Table>
+        </Card>
       </div>
     </div>
   );

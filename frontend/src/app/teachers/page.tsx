@@ -1,8 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Plus, Search, GraduationCap, Phone, Mail, Clock } from 'lucide-react';
+import Link from 'next/link';
+import { Plus, Search } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Table, THead, TBody, TR, TH, TD, EmptyRow } from '@/components/ui/table';
 
 interface Teacher {
   id: string;
@@ -14,11 +17,11 @@ interface Teacher {
   certificates?: string;
   cooperationType: string;
   maxHoursPerWeek?: number;
+  isActive: boolean;
   _count: { classesMain: number; sessions: number };
 }
 
 export default function TeachersPage() {
-  const router = useRouter();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -113,7 +116,8 @@ export default function TeachersPage() {
       <div className="max-w-7xl mx-auto">
         <div className="md:flex md:items-center md:justify-between">
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold tracking-tight text-slate-900">Giáo viên</h1>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">Quản lý giáo viên</h1>
+            <p className="text-sm text-slate-500">Hồ sơ giáo viên và phân công giảng dạy</p>
           </div>
           <div className="mt-4 flex md:mt-0 md:ml-4">
             <button
@@ -121,7 +125,7 @@ export default function TeachersPage() {
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
             >
               <Plus className="-ml-1 mr-2 h-4 w-4" />
-              Thêm Giáo viên
+              Thêm giáo viên
             </button>
           </div>
         </div>
@@ -221,75 +225,77 @@ export default function TeachersPage() {
           </div>
         )}
 
-        {/* Search */}
-        <div className="mt-6">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Tìm kiếm giáo viên..."
-              className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-200 w-full"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-        </div>
-
-        {/* Teachers Grid */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map((teacher) => (
-            <div
-              key={teacher.id}
-              className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => router.push(`/teachers/${teacher.id}`)}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center">
-                  <div className="h-12 w-12 rounded-full bg-brand-100 flex items-center justify-center">
-                    <GraduationCap className="h-6 w-6 text-brand-600" />
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-base font-semibold text-slate-900">{teacher.name}</h3>
-                    <p className="text-sm text-slate-500">{teacher.code}</p>
-                  </div>
-                </div>
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-800">
-                  {coopLabel(teacher.cooperationType)}
-                </span>
-              </div>
-              <div className="mt-4 space-y-2 text-sm text-slate-600">
-                <div className="flex items-center">
-                  <Phone className="h-4 w-4 mr-2 text-slate-400" />
-                  {teacher.phone}
-                </div>
-                {teacher.email && (
-                  <div className="flex items-center">
-                    <Mail className="h-4 w-4 mr-2 text-slate-400" />
-                    {teacher.email}
-                  </div>
-                )}
-                {teacher.maxHoursPerWeek && (
-                  <div className="flex items-center">
-                    <Clock className="h-4 w-4 mr-2 text-slate-400" />
-                    Tối đa {teacher.maxHoursPerWeek}h/tuần
-                  </div>
-                )}
-              </div>
-              <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between text-sm">
-                <span className="text-slate-500">{teacher._count.classesMain} lớp</span>
-                <span className="text-slate-500">{teacher._count.sessions} sessions</span>
-              </div>
+        {/* Teachers Table */}
+        <Card className="mt-6 overflow-hidden">
+          <CardHeader className="flex-col items-start gap-3">
+            <div>
+              <CardTitle>Danh sách giáo viên ({filtered.length})</CardTitle>
+              <CardDescription>Bấm vào tên giáo viên để xem hồ sơ chi tiết.</CardDescription>
             </div>
-          ))}
-        </div>
+            <div className="relative w-full sm:max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Tìm theo tên, mã..."
+                className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+          </CardHeader>
 
-        {filtered.length === 0 && (
-          <div className="text-center py-12 bg-white rounded-xl border border-slate-200 shadow-sm mt-6">
-            <GraduationCap className="mx-auto h-12 w-12 text-slate-400" />
-            <h3 className="mt-2 text-sm font-medium text-slate-900">Chưa có giáo viên nào</h3>
-            <p className="mt-1 text-sm text-slate-500">Thêm giáo viên đầu tiên.</p>
-          </div>
-        )}
+          <Table>
+            <THead>
+              <TR>
+                <TH className="w-10">#</TH>
+                <TH>Mã</TH>
+                <TH>Giáo viên</TH>
+                <TH>SĐT</TH>
+                <TH>Email</TH>
+                <TH>Hợp tác</TH>
+                <TH className="text-center">Lớp</TH>
+                <TH className="text-center">Buổi dạy</TH>
+                <TH>Trạng thái</TH>
+              </TR>
+            </THead>
+            <TBody>
+              {filtered.length === 0 ? (
+                <EmptyRow colSpan={9}>Chưa có giáo viên nào.</EmptyRow>
+              ) : (
+                filtered.map((teacher, index) => (
+                  <TR key={teacher.id}>
+                    <TD className="text-xs text-slate-400">{index + 1}</TD>
+                    <TD className="whitespace-nowrap font-mono text-xs text-slate-500">
+                      {teacher.code}
+                    </TD>
+                    <TD>
+                      <Link
+                        href={`/teachers/${teacher.id}`}
+                        className="font-medium text-brand-700 hover:underline"
+                      >
+                        {teacher.name}
+                      </Link>
+                    </TD>
+                    <TD className="whitespace-nowrap">{teacher.phone}</TD>
+                    <TD className="whitespace-nowrap">
+                      {teacher.email || <span className="text-slate-400">—</span>}
+                    </TD>
+                    <TD>
+                      <Badge tone="slate">{coopLabel(teacher.cooperationType)}</Badge>
+                    </TD>
+                    <TD className="text-center">{teacher._count?.classesMain ?? 0}</TD>
+                    <TD className="text-center">{teacher._count?.sessions ?? 0}</TD>
+                    <TD>
+                      <Badge tone={teacher.isActive ? 'green' : 'slate'}>
+                        {teacher.isActive ? 'Đang dạy' : 'Ngừng'}
+                      </Badge>
+                    </TD>
+                  </TR>
+                ))
+              )}
+            </TBody>
+          </Table>
+        </Card>
       </div>
     </div>
   );
