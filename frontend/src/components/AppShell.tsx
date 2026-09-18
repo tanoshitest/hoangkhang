@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Calendar, CreditCard,
   BarChart3, Settings, LogOut, Menu, X, Bell, ClipboardList, AlertTriangle,
-  UserCheck, Wallet, Kanban, School, UserCog, LucideIcon,
+  UserCheck, Wallet, Kanban, School, UserCog, ClipboardCheck, TrendingUp, LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -46,6 +46,8 @@ const NAV: NavGroup[] = [
       { href: '/courses', label: 'Quản lý khóa học', icon: BookOpen },
       { href: '/classes', label: 'Quản lý lớp học', icon: School },
       { href: '/sessions', label: 'Quản lý lịch dạy', icon: Calendar },
+      { href: '/reports/attendance', label: 'Báo cáo chuyên cần', icon: ClipboardCheck },
+      { href: '/reports/training-results', label: 'Báo cáo kết quả đào tạo', icon: TrendingUp },
       { href: '/warnings', label: 'Cảnh báo học viên', icon: AlertTriangle },
     ],
   },

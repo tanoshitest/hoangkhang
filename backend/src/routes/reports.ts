@@ -390,6 +390,149 @@ router.get('/teachers', requirePermission('reports', 'read'), async (req: Authen
   }
 });
 
+// GET /api/reports/attendance - Báo cáo chuyên cần theo học viên
+router.get('/attendance', requirePermission('reports', 'read'), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { classId, from, to } = req.query;
+    const sessionWhere: any = {};
+    if (classId) sessionWhere.classId = classId;
+    if (from || to) {
+      sessionWhere.date = {};
+      if (from) sessionWhere.date.gte = new Date(from as string);
+      if (to) sessionWhere.date.lte = new Date(`${to}T23:59:59`);
+    }
+
+    const attendances = await prisma.attendance.findMany({
+      where: { session: sessionWhere },
+      include: {
+        student: { select: { id: true, code: true, name: true } },
+        session: { select: { classId: true, class: { select: { code: true } } } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 5000,
+    });
+
+    const byStudent: Record<string, any> = {};
+    const statusTotals: Record<string, number> = {};
+    for (const a of attendances) {
+      if (!byStudent[a.studentId]) {
+        byStudent[a.studentId] = {
+          student: a.student, classCode: a.session.class.code,
+          present: 0, late: 0, early_leave: 0, excused_absent: 0, unexcused_absent: 0, total: 0,
+        };
+      }
+      const row = byStudent[a.studentId];
+      row[a.status] = (row[a.status] || 0) + 1;
+      row.total++;
+      statusTotals[a.status] = (statusTotals[a.status] || 0) + 1;
+    }
+
+    const rows = Object.values(byStudent).map((r: any) => ({
+      ...r,
+      attended: r.present + r.late + r.early_leave,
+      rate: r.total > 0 ? Math.round(((r.present + r.late + r.early_leave) / r.total) * 100) : 0,
+    })).sort((a, b) => b.total - a.total);
+
+    const total = attendances.length;
+    const attended = (statusTotals['present'] || 0) + (statusTotals['late'] || 0) + (statusTotals['early_leave'] || 0);
+
+    res.json({
+      summary: {
+        totalRecords: total,
+        totalStudents: rows.length,
+        rate: total > 0 ? Math.round((attended / total) * 100) : 0,
+        byStatus: statusTotals,
+      },
+      rows,
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch attendance report' });
+  }
+});
+
+// GET /api/reports/training-results - Báo cáo kết quả đào tạo theo học viên
+router.get('/training-results', requirePermission('reports', 'read'), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { classId } = req.query;
+
+    const students = await prisma.student.findMany({
+      where: classId
+        ? { classMembers: { some: { classId: classId as string, status: 'active' } } }
+        : { status: { notIn: ['dropped'] } },
+      select: { id: true, code: true, name: true, status: true },
+      take: 500,
+      orderBy: { code: 'asc' },
+    });
+    const studentIds = students.map(s => s.id);
+
+    const [assessments, attendances, openWarnings, memberships] = await Promise.all([
+      prisma.assessment.findMany({
+        where: { studentId: { in: studentIds } },
+        select: { studentId: true, type: true, score: true, maxScore: true, date: true },
+      }),
+      prisma.attendance.findMany({
+        where: {
+          studentId: { in: studentIds },
+          ...(classId ? { session: { classId: classId as string } } : {}),
+        },
+        select: { studentId: true, status: true },
+      }),
+      prisma.academicWarning.groupBy({
+        by: ['studentId'],
+        where: { studentId: { in: studentIds }, status: { notIn: ['resolved', 'closed'] } },
+        _count: true,
+      }),
+      prisma.classMember.findMany({
+        where: { studentId: { in: studentIds }, status: 'active' },
+        include: { class: { select: { code: true } } },
+      }),
+    ]);
+
+    const warningMap: Record<string, number> = {};
+    for (const w of openWarnings) warningMap[w.studentId] = w._count;
+    const classMap: Record<string, string[]> = {};
+    for (const m of memberships) {
+      if (!classMap[m.studentId]) classMap[m.studentId] = [];
+      classMap[m.studentId].push(m.class.code);
+    }
+
+    const rows = students.map((s) => {
+      const sAssess = assessments.filter(a => a.studentId === s.id);
+      let scoreSum = 0, scoreCount = 0;
+      const byType: Record<string, { sum: number; count: number }> = {};
+      for (const a of sAssess) {
+        if (a.score !== null && a.maxScore && a.maxScore > 0) {
+          const norm = (a.score / a.maxScore) * 10;
+          scoreSum += norm;
+          scoreCount++;
+          if (!byType[a.type]) byType[a.type] = { sum: 0, count: 0 };
+          byType[a.type].sum += norm;
+          byType[a.type].count++;
+        }
+      }
+      const sAtt = attendances.filter(a => a.studentId === s.id);
+      const attended = sAtt.filter(a => ['present', 'late', 'early_leave'].includes(a.status)).length;
+
+      return {
+        student: s,
+        classes: classMap[s.id] || [],
+        avgScore: scoreCount > 0 ? Math.round((scoreSum / scoreCount) * 10) / 10 : null,
+        assessmentCount: scoreCount,
+        scoreByType: Object.fromEntries(
+          Object.entries(byType).map(([t, v]) => [t, Math.round((v.sum / v.count) * 10) / 10]),
+        ),
+        attendanceTotal: sAtt.length,
+        attendanceRate: sAtt.length > 0 ? Math.round((attended / sAtt.length) * 100) : null,
+        openWarnings: warningMap[s.id] || 0,
+      };
+    });
+
+    res.json({ data: rows });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch training results report' });
+  }
+});
+
 // ==================== CSV EXPORT ====================
 
 // GET /api/reports/export/:type?format=csv - CSV export
