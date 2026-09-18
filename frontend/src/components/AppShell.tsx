@@ -314,7 +314,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         {/* Nội dung */}
         <main
           id="app-scroll"
-          className="relative min-w-0 flex-1 overflow-y-auto p-4 lg:p-6"
+          className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto p-4 lg:p-6"
         >
           {children}
         </main>

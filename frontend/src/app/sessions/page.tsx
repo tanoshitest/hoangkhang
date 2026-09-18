@@ -1,31 +1,42 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Plus, Calendar, Clock, User, Video, AlertTriangle, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Plus, AlertCircle } from 'lucide-react';
 
-interface Session {
+import { Dialog } from '@/components/ui/modal';
+import { buttonClass } from '@/components/ui/button';
+import { Field, Input, Select } from '@/components/ui/input';
+import { authHeaders } from '@/lib/utils';
+import { dateKey, parseDateParam } from '@/lib/date';
+import {
+  CalendarBoard,
+  CalendarNav,
+  CalendarPage,
+  calendarRange,
+  parseView,
+  type CalendarSession,
+} from './ui';
+
+interface ApiSession {
   id: string;
   date: string;
   startTime: string;
   endTime: string;
   status: string;
-  meetingLink?: string;
-  plannedContent?: string;
-  actualContent?: string;
+  plannedContent?: string | null;
   class: {
     id: string;
     code: string;
-    course: { name: string };
+    course?: { name: string } | null;
   };
-  teacher: { id: string; name: string };
-  _count: { attendances: number };
+  teacher?: { id: string; name: string } | null;
 }
 
 interface ClassOption {
   id: string;
   code: string;
-  course: { name: string };
+  course?: { name: string } | null;
 }
 
 interface Teacher {
@@ -33,56 +44,79 @@ interface Teacher {
   name: string;
 }
 
-export default function SessionsPage() {
+function toCalendarSession(s: ApiSession): CalendarSession {
+  return {
+    id: s.id,
+    date: new Date(s.date),
+    startTime: s.startTime,
+    endTime: s.endTime,
+    status: s.status,
+    classId: s.class.id,
+    classCode: s.class.code,
+    className: s.class.code,
+    courseName: s.class.course?.name ?? null,
+    teacherName: s.teacher?.name ?? null,
+    plannedContent: s.plannedContent,
+  };
+}
+
+const EMPTY_FORM = {
+  classId: '',
+  date: '',
+  startTime: '',
+  endTime: '',
+  teacherId: '',
+  meetingLink: '',
+  plannedContent: '',
+};
+
+function SessionsInner() {
   const router = useRouter();
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const searchParams = useSearchParams();
+  const view = parseView(searchParams.get('view'));
+  const date = parseDateParam(searchParams.get('date'));
+  const teacherId = searchParams.get('teacher') ?? '';
+  const classId = searchParams.get('class') ?? '';
+  const { from, to } = calendarRange(view, date);
+
+  const [sessions, setSessions] = useState<CalendarSession[]>([]);
   const [classes, setClasses] = useState<ClassOption[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [weekOffset, setWeekOffset] = useState(0);
-  const [formData, setFormData] = useState({
-    classId: '',
-    date: '',
-    startTime: '',
-    endTime: '',
-    teacherId: '',
-    meetingLink: '',
-    plannedContent: '',
-  });
+  const [formData, setFormData] = useState(EMPTY_FORM);
 
   useEffect(() => {
-    fetchData();
-  }, [weekOffset]);
+    fetchSessions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, dateKey(date), teacherId, classId]);
 
-  const getWeekRange = () => {
-    const now = new Date();
-    const day = now.getDay();
-    const monday = new Date(now);
-    monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + weekOffset * 7);
-    monday.setHours(0, 0, 0, 0);
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-    sunday.setHours(23, 59, 59, 999);
-    return { monday, sunday };
-  };
-
-  const fetchData = async () => {
-    const token = localStorage.getItem('token');
-    const headers = { 'Authorization': `Bearer ${token}` };
-    const { monday, sunday } = getWeekRange();
-
-    const [sessionsRes, classesRes, teachersRes] = await Promise.all([
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sessions?dateFrom=${monday.toISOString()}&dateTo=${sunday.toISOString()}`, { headers }),
+  useEffect(() => {
+    const headers = authHeaders();
+    Promise.all([
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/classes`, { headers }),
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/teachers`, { headers }),
-    ]);
+    ]).then(async ([classesRes, teachersRes]) => {
+      if (classesRes.ok) setClasses((await classesRes.json()).data);
+      if (teachersRes.ok) setTeachers((await teachersRes.json()).data);
+    });
+  }, []);
 
-    if (sessionsRes.ok) setSessions((await sessionsRes.json()).data);
-    if (classesRes.ok) setClasses((await classesRes.json()).data);
-    if (teachersRes.ok) setTeachers((await teachersRes.json()).data);
+  const fetchSessions = async () => {
+    setLoading(true);
+    const params = new URLSearchParams({
+      dateFrom: from.toISOString(),
+      dateTo: to.toISOString(),
+    });
+    if (teacherId) params.set('teacherId', teacherId);
+    if (classId) params.set('classId', classId);
+
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sessions?${params}`, {
+      headers: authHeaders(),
+    });
+    if (res.ok) setSessions(((await res.json()).data as ApiSession[]).map(toCalendarSession));
     setLoading(false);
   };
 
@@ -91,13 +125,9 @@ export default function SessionsPage() {
     setSubmitting(true);
     setError('');
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sessions`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({
           classId: formData.classId,
           date: formData.date,
@@ -111,266 +141,204 @@ export default function SessionsPage() {
       const data = await response.json();
       if (response.ok) {
         setShowForm(false);
-        setFormData({ classId: '', date: '', startTime: '', endTime: '', teacherId: '', meetingLink: '', plannedContent: '' });
-        fetchData();
+        setFormData(EMPTY_FORM);
+        fetchSessions();
       } else {
-        setError(data.detail || data.error || 'Failed to create session');
+        setError(data.detail || data.error || 'Tạo buổi học thất bại');
       }
     } finally {
       setSubmitting(false);
     }
   };
 
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      planned: 'bg-brand-100 text-brand-800',
-      taught: 'bg-green-100 text-green-800',
-      absent: 'bg-red-100 text-red-800',
-      makeup: 'bg-purple-100 text-purple-800',
-      rescheduled: 'bg-yellow-100 text-yellow-800',
-      teacher_changed: 'bg-orange-100 text-orange-800',
-    };
-    return colors[status] || 'bg-slate-100 text-slate-800';
+  // Giữ lại bộ lọc khi bấm ‹ › hoặc đổi chế độ xem.
+  const params: Record<string, string> = {};
+  if (teacherId) params.teacher = teacherId;
+  if (classId) params.class = classId;
+
+  /** Bộ lọc lịch dạy — chọn xong đổi URL ngay, chọn lại "Tất cả …" là bỏ lọc. */
+  const setFilter = (name: 'teacher' | 'class', value: string) => {
+    const search = new URLSearchParams({ view, date: dateKey(date), ...params });
+    if (value) search.set(name, value);
+    else search.delete(name);
+    router.push(`/sessions?${search.toString()}`);
   };
 
-  const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = {
-      planned: 'Dự kiến',
-      taught: 'Đã dạy',
-      absent: 'Vắng',
-      makeup: 'Học bù',
-      rescheduled: 'Đổi lịch',
-      teacher_changed: 'Đổi GV',
-    };
-    return labels[status] || status;
-  };
-
-  const { monday, sunday } = getWeekRange();
-  const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
-    return d;
-  });
-
-  const sessionsByDay = (day: Date) =>
-    sessions.filter(s => new Date(s.date).toDateString() === day.toDateString());
-
-  const dayNames = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
-      </div>
-    );
-  }
+  const filterSelectClass = 'h-8 w-auto min-w-[9rem] py-1 text-xs';
 
   return (
-    <div>
-      <div className="max-w-7xl mx-auto">
-        <div className="md:flex md:items-center md:justify-between">
-          <div className="flex-1 min-w-0">
-            <p className="text-sm text-slate-500">
-              {monday.toLocaleDateString('vi-VN')} — {sunday.toLocaleDateString('vi-VN')}
-            </p>
-          </div>
-          <div className="mt-4 flex md:mt-0 md:ml-4 space-x-3">
-            <div className="flex items-center space-x-1">
-              <button
-                onClick={() => setWeekOffset(weekOffset - 1)}
-                className="p-2 border border-slate-300 rounded-lg text-slate-700 bg-white hover:bg-slate-50"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setWeekOffset(0)}
-                className="px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 bg-white hover:bg-slate-50"
-              >
-                Tuần này
-              </button>
-              <button
-                onClick={() => setWeekOffset(weekOffset + 1)}
-                className="p-2 border border-slate-300 rounded-lg text-slate-700 bg-white hover:bg-slate-50"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
+    <CalendarPage>
+      <CalendarBoard
+        view={view}
+        date={date}
+        sessions={sessions}
+        hrefBase="/sessions"
+        loading={loading}
+        toolbar={
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <CalendarNav basePath="/sessions" view={view} date={date} params={params}>
+                <div className="flex min-w-0 flex-nowrap items-center gap-1.5 overflow-x-auto">
+                  <Select
+                    value={teacherId}
+                    onChange={(e) => setFilter('teacher', e.target.value)}
+                    aria-label="Tất cả giáo viên"
+                    className={filterSelectClass}
+                  >
+                    <option value="">Tất cả giáo viên</option>
+                    {teachers.map((t) => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </Select>
+                  <Select
+                    value={classId}
+                    onChange={(e) => setFilter('class', e.target.value)}
+                    aria-label="Tất cả lớp"
+                    className={filterSelectClass}
+                  >
+                    <option value="">Tất cả lớp</option>
+                    {classes.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.code}{c.course?.name ? ` — ${c.course.name}` : ''}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              </CalendarNav>
             </div>
             <button
-              onClick={() => setShowForm(!showForm)}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
+              type="button"
+              onClick={() => setShowForm(true)}
+              className={buttonClass('primary', 'sm')}
             >
-              <Plus className="-ml-1 mr-2 h-4 w-4" />
+              <Plus className="h-4 w-4" />
               Thêm buổi học
             </button>
           </div>
-        </div>
+        }
+      />
 
-        {/* Create Form */}
-        {showForm && (
-          <div className="mt-6 bg-white border border-slate-200 shadow-sm sm:rounded-lg p-6">
-            <h3 className="text-base font-semibold text-slate-900 mb-4">Tạo buổi học mới</h3>
-            {error && (
-              <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3 flex items-start">
-                <AlertTriangle className="h-5 w-5 text-red-400 mr-2 flex-shrink-0" />
-                <span className="text-sm text-red-700">{error}</span>
-              </div>
-            )}
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Lớp *</label>
-                <select
-                  required
-                  value={formData.classId}
-                  onChange={(e) => setFormData({ ...formData, classId: e.target.value })}
-                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
-                >
-                  <option value="">Chọn lớp</option>
-                  {classes.map(c => (
-                    <option key={c.id} value={c.id}>{c.code} — {c.course.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Giáo viên *</label>
-                <select
-                  required
-                  value={formData.teacherId}
-                  onChange={(e) => setFormData({ ...formData, teacherId: e.target.value })}
-                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
-                >
-                  <option value="">Chọn giáo viên</option>
-                  {teachers.map(t => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Ngày *</label>
-                <input
-                  type="date"
-                  required
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700">Bắt đầu *</label>
-                  <input
-                    type="time"
-                    required
-                    value={formData.startTime}
-                    onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                    className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700">Kết thúc *</label>
-                  <input
-                    type="time"
-                    required
-                    value={formData.endTime}
-                    onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                    className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Link họp</label>
-                <input
-                  type="text"
-                  value={formData.meetingLink}
-                  onChange={(e) => setFormData({ ...formData, meetingLink: e.target.value })}
-                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Nội dung dự kiến</label>
-                <input
-                  type="text"
-                  value={formData.plannedContent}
-                  onChange={(e) => setFormData({ ...formData, plannedContent: e.target.value })}
-                  placeholder="VD: Bài 5 - Ngữ pháp"
-                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
-                />
-              </div>
-              <div className="md:col-span-2 flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 bg-white hover:bg-slate-50"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
-                >
-                  {submitting ? 'Đang lưu...' : 'Tạo session'}
-                </button>
-              </div>
-            </form>
+      <Dialog
+        title="Thêm buổi học"
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        wide
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setShowForm(false)}
+              className={buttonClass('outline', 'md')}
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              form="create-session"
+              disabled={submitting}
+              className={buttonClass('primary', 'md')}
+            >
+              {submitting ? 'Đang lưu...' : 'Tạo buổi học'}
+            </button>
+          </>
+        }
+      >
+        <form id="create-session" onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Lớp">
+              <Select
+                required
+                value={formData.classId}
+                onChange={(e) => setFormData({ ...formData, classId: e.target.value })}
+              >
+                <option value="">Chọn lớp</option>
+                {classes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.code}{c.course?.name ? ` — ${c.course.name}` : ''}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Giáo viên">
+              <Select
+                required
+                value={formData.teacherId}
+                onChange={(e) => setFormData({ ...formData, teacherId: e.target.value })}
+              >
+                <option value="">Chọn giáo viên</option>
+                {teachers.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </Select>
+            </Field>
           </div>
-        )}
 
-        {/* Week Grid */}
-        <div className="mt-6 grid grid-cols-7 gap-3">
-          {weekDays.map((day, i) => {
-            const daySessions = sessionsByDay(day);
-            const isToday = day.toDateString() === new Date().toDateString();
-            return (
-              <div key={i} className="min-h-48">
-                <div className={`text-center py-2 rounded-t-lg text-sm font-medium ${
-                  isToday ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-700'
-                }`}>
-                  <div>{dayNames[i]}</div>
-                  <div className="text-xs">{day.getDate()}/{day.getMonth() + 1}</div>
-                </div>
-                <div className="space-y-2 mt-2">
-                  {daySessions.length === 0 ? (
-                    <div className="text-center text-xs text-slate-300 py-4">—</div>
-                  ) : (
-                    daySessions.map((session) => (
-                      <div
-                        key={session.id}
-                        onClick={() => router.push(`/sessions/${session.id}`)}
-                        className="bg-white rounded-xl border border-slate-200 shadow-sm p-2 cursor-pointer hover:shadow-md transition-shadow"
-                      >
-                        <div className="text-xs font-medium text-slate-900 truncate">
-                          {session.class.code}
-                        </div>
-                        <div className="text-xs text-slate-500 flex items-center mt-1">
-                          <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
-                          {session.startTime}-{session.endTime}
-                        </div>
-                        <div className="text-xs text-slate-500 flex items-center mt-0.5 truncate">
-                          <User className="h-3 w-3 mr-1 flex-shrink-0" />
-                          {session.teacher.name}
-                        </div>
-                        <div className="mt-1.5">
-                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${getStatusColor(session.status)}`}>
-                            {getStatusLabel(session.status)}
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {sessions.length === 0 && (
-          <div className="text-center py-12 bg-white rounded-xl border border-slate-200 shadow-sm mt-6">
-            <Calendar className="mx-auto h-12 w-12 text-slate-400" />
-            <h3 className="mt-2 text-sm font-medium text-slate-900">Không có buổi học nào tuần này</h3>
-            <p className="mt-1 text-sm text-slate-500">Tạo buổi học hoặc chuyển sang tuần khác.</p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Field label="Ngày học">
+              <Input
+                type="date"
+                required
+                value={formData.date}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+              />
+            </Field>
+            <Field label="Giờ bắt đầu">
+              <Input
+                type="time"
+                required
+                value={formData.startTime}
+                onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+              />
+            </Field>
+            <Field label="Giờ kết thúc">
+              <Input
+                type="time"
+                required
+                value={formData.endTime}
+                onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+              />
+            </Field>
           </div>
-        )}
-      </div>
-    </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Link họp">
+              <Input
+                type="text"
+                value={formData.meetingLink}
+                onChange={(e) => setFormData({ ...formData, meetingLink: e.target.value })}
+              />
+            </Field>
+            <Field label="Nội dung dự kiến" hint="VD: Bài 5 - Ngữ pháp">
+              <Input
+                type="text"
+                value={formData.plannedContent}
+                onChange={(e) => setFormData({ ...formData, plannedContent: e.target.value })}
+              />
+            </Field>
+          </div>
+
+          {error ? (
+            <p className="flex items-start gap-1.5 whitespace-pre-line text-xs text-red-600">
+              <AlertCircle className="mt-px h-3.5 w-3.5 shrink-0" />
+              {error}
+            </p>
+          ) : null}
+        </form>
+      </Dialog>
+    </CalendarPage>
+  );
+}
+
+export default function SessionsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-0 flex-1 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-brand-600" />
+        </div>
+      }
+    >
+      <SessionsInner />
+    </Suspense>
   );
 }
