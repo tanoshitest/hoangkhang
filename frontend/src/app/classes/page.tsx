@@ -129,22 +129,6 @@ export default function ClassesPage() {
   return (
     <div>
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-end gap-2">
-          <Link
-            href="/courses"
-            className="inline-flex items-center px-3 py-1.5 border border-slate-300 rounded-lg shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50"
-          >
-            Khóa học
-          </Link>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
-          >
-            <Plus className="-ml-1 mr-1.5 h-4 w-4" />
-            Thêm lớp
-          </button>
-        </div>
-
         {/* Create Form */}
         {showForm && (
           <div className="mt-6 bg-white border border-slate-200 shadow-sm sm:rounded-lg p-6">
@@ -268,9 +252,26 @@ export default function ClassesPage() {
         {/* Classes Table */}
         <Card className="mt-6 overflow-hidden">
           <CardHeader className="flex-col items-start gap-3">
-            <div>
-              <CardTitle>Danh sách lớp ({filtered.length})</CardTitle>
-              <CardDescription>Bấm vào mã lớp để xem chi tiết và quản lý buổi học.</CardDescription>
+            <div className="flex w-full items-start justify-between gap-4">
+              <div>
+                <CardTitle>Danh sách lớp ({filtered.length})</CardTitle>
+                <CardDescription>Bấm vào mã lớp để xem chi tiết và quản lý buổi học.</CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/courses"
+                  className="inline-flex items-center px-3 py-1.5 border border-slate-300 rounded-lg shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50"
+                >
+                  Khóa học
+                </Link>
+                <button
+                  onClick={() => setShowForm(!showForm)}
+                  className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
+                >
+                  <Plus className="-ml-1 mr-1.5 h-4 w-4" />
+                  Thêm lớp
+                </button>
+              </div>
             </div>
             <div className="relative w-full sm:max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />

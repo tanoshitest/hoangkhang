@@ -85,18 +85,10 @@ export default function UsersPanel() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
-        <p className="text-sm text-slate-600">{users.length} người dùng</p>
-        <button onClick={() => setShowForm(!showForm)}
-          className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-brand-600 rounded-lg hover:bg-brand-700">
-          <Plus className="h-4 w-4 mr-1" /> Tạo tài khoản
-        </button>
-      </div>
-
       {error && <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">{error}</div>}
 
       {showForm && (
-        <form onSubmit={createUser} className="mb-6 bg-brand-50 border border-brand-200 rounded-lg p-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <form onSubmit={createUser} className="mb-6 bg-white border border-slate-200 shadow-sm rounded-lg p-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="block text-xs text-slate-600">Email *</label>
             <input type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -139,9 +131,20 @@ export default function UsersPanel() {
       )}
 
       <Card className="overflow-hidden">
-        <CardHeader>
-          <CardTitle>Danh sách người dùng ({users.length})</CardTitle>
-          <CardDescription>Tài khoản đăng nhập và vai trò trong hệ thống.</CardDescription>
+        <CardHeader className="flex-col items-start gap-3">
+          <div className="flex w-full items-start justify-between gap-4">
+            <div>
+              <CardTitle>Danh sách người dùng ({users.length})</CardTitle>
+              <CardDescription>Tài khoản đăng nhập và vai trò trong hệ thống.</CardDescription>
+            </div>
+            <button
+              onClick={() => setShowForm(!showForm)}
+              className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
+            >
+              <Plus className="-ml-1 mr-1.5 h-4 w-4" />
+              Tạo tài khoản
+            </button>
+          </div>
         </CardHeader>
         <Table>
           <THead>

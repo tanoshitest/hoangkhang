@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ClipboardCheck, Users, Percent, ListChecks } from 'lucide-react';
+import { Users, Percent, ListChecks } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Table, THead, TBody, TR, TH, TD, EmptyRow } from '@/components/ui/table';
 
 interface ClassOption {
   id: string;
@@ -91,34 +93,6 @@ export default function AttendanceReportPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <select
-          value={classId}
-          onChange={(e) => setClassId(e.target.value)}
-          className="border border-slate-300 rounded-lg py-2 px-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-        >
-          <option value="">Tất cả lớp</option>
-          {classes.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.code}{c.course?.name ? ` — ${c.course.name}` : ''}
-            </option>
-          ))}
-        </select>
-        <input
-          type="date"
-          value={from}
-          onChange={(e) => setFrom(e.target.value)}
-          className="border border-slate-300 rounded-lg py-2 px-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-        />
-        <input
-          type="date"
-          value={to}
-          onChange={(e) => setTo(e.target.value)}
-          className="border border-slate-300 rounded-lg py-2 px-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-        />
-      </div>
-
       {loading ? (
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
@@ -126,7 +100,7 @@ export default function AttendanceReportPage() {
       ) : report ? (
         <>
           {/* Summary cards */}
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-brand-50 flex items-center justify-center">
@@ -175,50 +149,81 @@ export default function AttendanceReportPage() {
           </div>
 
           {/* Table */}
-          <div className="mt-4 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Học viên</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Lớp</th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase">Có mặt</th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase">Đi muộn</th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase">Về sớm</th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase">Vắng phép</th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase">Vắng KP</th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase">Tổng buổi</th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase">Tỷ lệ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {report.rows.map((row) => (
-                  <tr key={row.student.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3">
-                      <div className="text-sm font-medium text-slate-900">{row.student.name}</div>
-                      <div className="text-xs text-slate-500">{row.student.code}</div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-600">{row.classCode}</td>
-                    <td className="px-4 py-3 text-center text-sm text-green-700">{row.present}</td>
-                    <td className="px-4 py-3 text-center text-sm text-yellow-700">{row.late}</td>
-                    <td className="px-4 py-3 text-center text-sm text-orange-700">{row.early_leave}</td>
-                    <td className="px-4 py-3 text-center text-sm text-slate-600">{row.excused_absent}</td>
-                    <td className="px-4 py-3 text-center text-sm text-red-700">{row.unexcused_absent}</td>
-                    <td className="px-4 py-3 text-center text-sm font-medium text-slate-900">{row.total}</td>
-                    <td className={`px-4 py-3 text-center text-sm font-semibold ${rateColor(row.rate)}`}>
-                      {row.rate}%
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {report.rows.length === 0 && (
-              <div className="text-center py-12">
-                <ClipboardCheck className="mx-auto h-12 w-12 text-slate-300" />
-                <h3 className="mt-2 text-sm font-medium text-slate-900">Chưa có dữ liệu điểm danh</h3>
-                <p className="mt-1 text-sm text-slate-500">Thử đổi bộ lọc lớp hoặc khoảng thời gian.</p>
+          <Card className="mt-4 overflow-hidden">
+            <CardHeader className="flex-col items-start gap-3">
+              <div>
+                <CardTitle>Chuyên cần theo học viên ({report.rows.length})</CardTitle>
+                <CardDescription>Tổng hợp lượt điểm danh theo trạng thái của từng học viên.</CardDescription>
               </div>
-            )}
-          </div>
+              <div className="flex w-full flex-wrap gap-3">
+                <select
+                  value={classId}
+                  onChange={(e) => setClassId(e.target.value)}
+                  className="border border-slate-300 rounded-lg py-2 px-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                >
+                  <option value="">Tất cả lớp</option>
+                  {classes.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.code}{c.course?.name ? ` — ${c.course.name}` : ''}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="date"
+                  value={from}
+                  onChange={(e) => setFrom(e.target.value)}
+                  className="border border-slate-300 rounded-lg py-2 px-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                />
+                <input
+                  type="date"
+                  value={to}
+                  onChange={(e) => setTo(e.target.value)}
+                  className="border border-slate-300 rounded-lg py-2 px-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                />
+              </div>
+            </CardHeader>
+            <Table>
+              <THead>
+                <TR>
+                  <TH className="w-10">#</TH>
+                  <TH>Học viên</TH>
+                  <TH>Lớp</TH>
+                  <TH className="text-center">Có mặt</TH>
+                  <TH className="text-center">Đi muộn</TH>
+                  <TH className="text-center">Về sớm</TH>
+                  <TH className="text-center">Vắng phép</TH>
+                  <TH className="text-center">Vắng KP</TH>
+                  <TH className="text-center">Tổng buổi</TH>
+                  <TH className="text-center">Tỷ lệ</TH>
+                </TR>
+              </THead>
+              <TBody>
+                {report.rows.length === 0 ? (
+                  <EmptyRow colSpan={10}>Chưa có dữ liệu điểm danh — thử đổi bộ lọc lớp hoặc khoảng thời gian.</EmptyRow>
+                ) : (
+                  report.rows.map((row, index) => (
+                    <TR key={row.student.id}>
+                      <TD className="text-xs text-slate-400">{index + 1}</TD>
+                      <TD>
+                        <div className="font-medium text-slate-900">{row.student.name}</div>
+                        <div className="font-mono text-xs text-slate-500">{row.student.code}</div>
+                      </TD>
+                      <TD className="whitespace-nowrap">{row.classCode}</TD>
+                      <TD className="text-center text-green-700">{row.present}</TD>
+                      <TD className="text-center text-yellow-700">{row.late}</TD>
+                      <TD className="text-center text-orange-700">{row.early_leave}</TD>
+                      <TD className="text-center text-slate-600">{row.excused_absent}</TD>
+                      <TD className="text-center text-red-700">{row.unexcused_absent}</TD>
+                      <TD className="text-center font-medium text-slate-900">{row.total}</TD>
+                      <TD className={`text-center font-semibold ${rateColor(row.rate)}`}>
+                        {row.rate}%
+                      </TD>
+                    </TR>
+                  ))
+                )}
+              </TBody>
+            </Table>
+          </Card>
         </>
       ) : (
         <div className="mt-6 text-center py-12 bg-white rounded-xl border border-slate-200">
