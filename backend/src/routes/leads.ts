@@ -236,6 +236,129 @@ router.patch('/:id/status', requirePermission('leads', 'write'), async (req: Aut
   }
 });
 
+// POST /api/leads/:id/activities - Log an activity (call, message, email, meeting)
+router.post('/:id/activities', requirePermission('leads', 'write'), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { type, content } = req.body;
+
+    if (!type || !content) {
+      return res.status(400).json({ error: 'type and content are required' });
+    }
+
+    const lead = await prisma.lead.findUnique({ where: { id } });
+    if (!lead) {
+      return res.status(404).json({ error: 'Lead not found' });
+    }
+
+    const activity = await prisma.leadActivity.create({
+      data: {
+        leadId: id,
+        type,
+        content,
+        createdBy: req.user?.id || 'system',
+      },
+    });
+
+    await prisma.lead.update({
+      where: { id },
+      data: { lastContactDate: new Date() },
+    });
+
+    res.status(201).json(activity);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create activity' });
+  }
+});
+
+// POST /api/leads/:id/followups - Schedule a follow-up
+router.post('/:id/followups', requirePermission('leads', 'write'), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { date, content } = req.body;
+
+    if (!date || !content) {
+      return res.status(400).json({ error: 'date and content are required' });
+    }
+
+    const lead = await prisma.lead.findUnique({ where: { id } });
+    if (!lead) {
+      return res.status(404).json({ error: 'Lead not found' });
+    }
+
+    const followUp = await prisma.leadFollowUp.create({
+      data: {
+        leadId: id,
+        date: new Date(date),
+        content,
+        status: 'scheduled',
+        createdBy: req.user?.id || 'system',
+      },
+    });
+
+    await prisma.lead.update({
+      where: { id },
+      data: { nextFollowUpDate: new Date(date) },
+    });
+
+    res.status(201).json(followUp);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create follow-up' });
+  }
+});
+
+// PATCH /api/leads/:id/followups/:followUpId - Update follow-up status
+router.patch('/:id/followups/:followUpId', requirePermission('leads', 'write'), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { followUpId } = req.params;
+    const { status, content } = req.body;
+
+    const followUp = await prisma.leadFollowUp.update({
+      where: { id: followUpId },
+      data: {
+        ...(status && { status }),
+        ...(content && { content }),
+      },
+    });
+
+    res.json(followUp);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update follow-up' });
+  }
+});
+
+// POST /api/leads/:id/trials - Record a placement test / trial class
+router.post('/:id/trials', requirePermission('leads', 'write'), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { type, date, result, notes } = req.body;
+
+    if (!type || !date) {
+      return res.status(400).json({ error: 'type and date are required' });
+    }
+
+    const lead = await prisma.lead.findUnique({ where: { id } });
+    if (!lead) {
+      return res.status(404).json({ error: 'Lead not found' });
+    }
+
+    const trial = await prisma.trialTest.create({
+      data: {
+        leadId: id,
+        type,
+        date: new Date(date),
+        result: result || null,
+        notes: notes || null,
+        createdBy: req.user?.id || 'system',
+      },
+    });
+
+    res.status(201).json(trial);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create trial/test record' });
+  }
+});
+
 // POST /api/leads/:id/convert - Convert lead to student
 router.post('/:id/convert', requirePermission('students', 'write'), async (req: AuthenticatedRequest, res: Response) => {
   try {

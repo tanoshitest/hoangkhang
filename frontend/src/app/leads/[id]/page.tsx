@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Edit, Phone, Mail, MapPin, Calendar, User, MessageSquare, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Edit, Phone, Mail, MapPin, Calendar, User, MessageSquare, Clock, CheckCircle, XCircle, Plus, UserCheck } from 'lucide-react';
 
 interface Lead {
   id: string;
@@ -56,6 +56,13 @@ export default function LeadDetailPage() {
   const [lead, setLead] = useState<Lead | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [showActivityForm, setShowActivityForm] = useState(false);
+  const [showFollowUpForm, setShowFollowUpForm] = useState(false);
+  const [showTrialForm, setShowTrialForm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [activityForm, setActivityForm] = useState({ type: 'call', content: '' });
+  const [followUpForm, setFollowUpForm] = useState({ date: '', content: '' });
+  const [trialForm, setTrialForm] = useState({ type: 'placement_test', date: '', result: '', notes: '' });
 
   useEffect(() => {
     if (params.id) {
@@ -80,6 +87,83 @@ export default function LeadDetailPage() {
       console.error('Failed to fetch lead:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const authHeaders = () => ({
+    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+    'Content-Type': 'application/json',
+  });
+
+  const submitActivity = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/leads/${params.id}/activities`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(activityForm),
+      });
+      if (res.ok) {
+        setActivityForm({ type: 'call', content: '' });
+        setShowActivityForm(false);
+        fetchLead(params.id as string);
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const submitFollowUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/leads/${params.id}/followups`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(followUpForm),
+      });
+      if (res.ok) {
+        setFollowUpForm({ date: '', content: '' });
+        setShowFollowUpForm(false);
+        fetchLead(params.id as string);
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const submitTrial = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/leads/${params.id}/trials`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(trialForm),
+      });
+      if (res.ok) {
+        setTrialForm({ type: 'placement_test', date: '', result: '', notes: '' });
+        setShowTrialForm(false);
+        fetchLead(params.id as string);
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const convertLead = async () => {
+    if (!confirm('Chuyển lead này thành học viên?')) return;
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/leads/${params.id}/convert`, {
+      method: 'POST',
+      headers: authHeaders(),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      router.push(`/students/${data.student.id}`);
+    } else {
+      const err = await res.json();
+      alert(err.error || 'Convert failed');
     }
   };
 
@@ -177,6 +261,15 @@ export default function LeadDetailPage() {
               <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(lead.status)}`}>
                 {getStatusLabel(lead.status)}
               </span>
+              {lead.status !== 'registered' && (
+                <button
+                  onClick={convertLead}
+                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+                >
+                  <UserCheck className="-ml-1 mr-2 h-4 w-4" />
+                  Chuyển thành HV
+                </button>
+              )}
               <button className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
                 <Edit className="-ml-1 mr-2 h-4 w-4" />
                 Chỉnh sửa
@@ -366,9 +459,47 @@ export default function LeadDetailPage() {
 
           {activeTab === 'activities' && (
             <div className="bg-white shadow overflow-hidden sm:rounded-md">
-              <div className="px-4 py-5 sm:px-6">
+              <div className="px-4 py-5 sm:px-6 flex items-center justify-between">
                 <h3 className="text-lg leading-6 font-medium text-gray-900">Lịch sử trao đổi</h3>
+                <button
+                  onClick={() => setShowActivityForm(!showActivityForm)}
+                  className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                >
+                  <Plus className="mr-1 h-4 w-4" />
+                  Thêm
+                </button>
               </div>
+              {showActivityForm && (
+                <form onSubmit={submitActivity} className="px-4 py-4 bg-gray-50 border-t border-gray-200 space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <select
+                      value={activityForm.type}
+                      onChange={(e) => setActivityForm({ ...activityForm, type: e.target.value })}
+                      className="border border-gray-300 rounded-md py-2 px-3 text-sm"
+                    >
+                      <option value="call">Gọi điện</option>
+                      <option value="message">Nhắn tin</option>
+                      <option value="email">Email</option>
+                      <option value="meeting">Gặp mặt</option>
+                    </select>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Nội dung trao đổi..."
+                      value={activityForm.content}
+                      onChange={(e) => setActivityForm({ ...activityForm, content: e.target.value })}
+                      className="md:col-span-2 border border-gray-300 rounded-md py-2 px-3 text-sm"
+                    />
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {submitting ? 'Đang lưu...' : 'Lưu'}
+                    </button>
+                  </div>
+                </form>
+              )}
               <div className="border-t border-gray-200">
                 {lead.activities.length === 0 ? (
                   <div className="text-center py-12">
@@ -403,9 +534,44 @@ export default function LeadDetailPage() {
 
           {activeTab === 'followups' && (
             <div className="bg-white shadow overflow-hidden sm:rounded-md">
-              <div className="px-4 py-5 sm:px-6">
+              <div className="px-4 py-5 sm:px-6 flex items-center justify-between">
                 <h3 className="text-lg leading-6 font-medium text-gray-900">Lịch follow-up</h3>
+                <button
+                  onClick={() => setShowFollowUpForm(!showFollowUpForm)}
+                  className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                >
+                  <Plus className="mr-1 h-4 w-4" />
+                  Thêm
+                </button>
               </div>
+              {showFollowUpForm && (
+                <form onSubmit={submitFollowUp} className="px-4 py-4 bg-gray-50 border-t border-gray-200 space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <input
+                      type="datetime-local"
+                      required
+                      value={followUpForm.date}
+                      onChange={(e) => setFollowUpForm({ ...followUpForm, date: e.target.value })}
+                      className="border border-gray-300 rounded-md py-2 px-3 text-sm"
+                    />
+                    <input
+                      type="text"
+                      required
+                      placeholder="Nội dung follow-up..."
+                      value={followUpForm.content}
+                      onChange={(e) => setFollowUpForm({ ...followUpForm, content: e.target.value })}
+                      className="md:col-span-2 border border-gray-300 rounded-md py-2 px-3 text-sm"
+                    />
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {submitting ? 'Đang lưu...' : 'Lưu'}
+                    </button>
+                  </div>
+                </form>
+              )}
               <div className="border-t border-gray-200">
                 {lead.followUps.length === 0 ? (
                   <div className="text-center py-12">
@@ -440,9 +606,60 @@ export default function LeadDetailPage() {
 
           {activeTab === 'trials' && (
             <div className="bg-white shadow overflow-hidden sm:rounded-md">
-              <div className="px-4 py-5 sm:px-6">
-                <h3 className="text-lg leading-6 font-medium text-gray-900">Kiểm tra & Học thử</h3>
+              <div className="px-4 py-5 sm:px-6 flex items-center justify-between">
+                <h3 className="text-lg leading-6 font-medium text-gray-900">Kiểm tra &amp; Học thử</h3>
+                <button
+                  onClick={() => setShowTrialForm(!showTrialForm)}
+                  className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                >
+                  <Plus className="mr-1 h-4 w-4" />
+                  Thêm
+                </button>
               </div>
+              {showTrialForm && (
+                <form onSubmit={submitTrial} className="px-4 py-4 bg-gray-50 border-t border-gray-200 space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <select
+                      value={trialForm.type}
+                      onChange={(e) => setTrialForm({ ...trialForm, type: e.target.value })}
+                      className="border border-gray-300 rounded-md py-2 px-3 text-sm"
+                    >
+                      <option value="placement_test">Kiểm tra đầu vào</option>
+                      <option value="trial_class">Học thử</option>
+                    </select>
+                    <input
+                      type="datetime-local"
+                      required
+                      value={trialForm.date}
+                      onChange={(e) => setTrialForm({ ...trialForm, date: e.target.value })}
+                      className="border border-gray-300 rounded-md py-2 px-3 text-sm"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Kết quả (vd: N4, 7.5/10)..."
+                      value={trialForm.result}
+                      onChange={(e) => setTrialForm({ ...trialForm, result: e.target.value })}
+                      className="border border-gray-300 rounded-md py-2 px-3 text-sm"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Ghi chú..."
+                      value={trialForm.notes}
+                      onChange={(e) => setTrialForm({ ...trialForm, notes: e.target.value })}
+                      className="border border-gray-300 rounded-md py-2 px-3 text-sm"
+                    />
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {submitting ? 'Đang lưu...' : 'Lưu'}
+                    </button>
+                  </div>
+                </form>
+              )}
               <div className="border-t border-gray-200">
                 {lead.trialTests.length === 0 ? (
                   <div className="text-center py-12">

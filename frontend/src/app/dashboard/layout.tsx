@@ -16,6 +16,9 @@ import {
   Menu,
   X,
   Bell,
+  ClipboardList,
+  AlertTriangle,
+  UserCheck,
 } from 'lucide-react';
 
 interface User {
@@ -67,8 +70,12 @@ export default function DashboardLayout({
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Tuyển sinh', href: '/leads', icon: Users },
     { name: 'Học viên', href: '/students', icon: GraduationCap },
+    { name: 'Enrollment', href: '/enrollments', icon: ClipboardList },
     { name: 'Khóa học', href: '/courses', icon: BookOpen },
-    { name: 'Lịch học', href: '/schedule', icon: Calendar },
+    { name: 'Lớp học', href: '/classes', icon: Users },
+    { name: 'Lịch dạy', href: '/sessions', icon: Calendar },
+    { name: 'Giáo viên', href: '/teachers', icon: UserCheck },
+    { name: 'Cảnh báo', href: '/warnings', icon: AlertTriangle },
     { name: 'Tài chính', href: '/finance', icon: CreditCard },
     { name: 'Báo cáo', href: '/reports', icon: BarChart3 },
     { name: 'Hệ thống', href: '/settings', icon: Settings },
