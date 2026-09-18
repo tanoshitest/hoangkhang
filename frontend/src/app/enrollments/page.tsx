@@ -24,7 +24,7 @@ interface Enrollment {
     id: string;
     code: string;
   };
-  events: Array<{
+  events?: Array<{
     id: string;
     type: string;
     effectiveDate: string;
@@ -194,11 +194,11 @@ export default function EnrollmentsPage() {
                   </div>
                   
                   {/* Events */}
-                  {enrollment.events.length > 0 && (
+                  {(enrollment.events?.length ?? 0) > 0 && (
                     <div className="mt-3 ml-14">
                       <h4 className="text-sm font-medium text-slate-900 mb-2">Lịch sử sự kiện:</h4>
                       <div className="space-y-1">
-                        {enrollment.events.map((event) => (
+                        {enrollment.events!.map((event) => (
                           <div key={event.id} className="text-sm text-slate-600">
                             • {getEventTypeLabel(event.type)} - {new Date(event.effectiveDate).toLocaleDateString('vi-VN')}
                             {event.reason && ` (${event.reason})`}

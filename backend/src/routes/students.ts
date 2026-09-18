@@ -57,6 +57,10 @@ router.get('/', requirePermission('students', 'read'), async (req: Authenticated
             include: {
               course: true,
               class: true,
+              events: {
+                orderBy: { effectiveDate: 'desc' },
+                take: 5,
+              },
             },
           },
         },
