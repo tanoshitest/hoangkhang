@@ -348,6 +348,7 @@ model Session {
   attendances   Attendance[]
   changes       SessionChange[]
   progress      LearningProgress[]
+  payrollItems  TeacherPayrollItem[]
 
   @@map("sessions")
 }
@@ -454,6 +455,7 @@ model Teacher {
   availability TeacherAvailability[]
   assignments  TeacherAssignment[]
   rates        TeacherRate[]
+  payrollPeriods TeacherPayrollPeriod[]
   classesMain  Class[] @relation("ClassMainTeacher")
   classesSupport Class[] @relation("ClassSupportTeacher")
   sessions     Session[]
@@ -504,6 +506,45 @@ model TeacherRate {
   teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
   @@map("teacher_rates")
+}
+
+model TeacherPayrollPeriod {
+  id          String   @id @default(uuid())
+  teacherId   String
+  periodStart DateTime
+  periodEnd   DateTime
+  status      String   @default("draft") // draft, confirmed, paid
+  totalHours  Float    @default(0)
+  totalAmount Float    @default(0)
+  notes       String?
+  confirmedBy String?
+  confirmedAt DateTime?
+  paidAt      DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  items   TeacherPayrollItem[]
+
+  @@map("teacher_payroll_periods")
+}
+
+model TeacherPayrollItem {
+  id          String   @id @default(uuid())
+  periodId    String
+  sessionId   String?
+  type        String   // regular, substitute, makeup, trial, cancelled, adjustment
+  date        DateTime
+  hours       Float
+  rate        Float
+  amount      Float
+  description String?
+  createdAt   DateTime @default(now())
+
+  period  TeacherPayrollPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  session Session?             @relation(fields: [sessionId], references: [id])
+
+  @@map("teacher_payroll_items")
 }
 
 // ==================== FINANCE ====================

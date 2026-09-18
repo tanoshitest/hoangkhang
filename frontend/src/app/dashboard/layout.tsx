@@ -19,6 +19,7 @@ import {
   ClipboardList,
   AlertTriangle,
   UserCheck,
+  Wallet,
 } from 'lucide-react';
 
 interface User {
@@ -77,6 +78,7 @@ export default function DashboardLayout({
     { name: 'Giáo viên', href: '/teachers', icon: UserCheck },
     { name: 'Cảnh báo', href: '/warnings', icon: AlertTriangle },
     { name: 'Tài chính', href: '/finance', icon: CreditCard },
+    { name: 'Bảng lương', href: '/payroll', icon: Wallet },
     { name: 'Báo cáo', href: '/reports', icon: BarChart3 },
     { name: 'Hệ thống', href: '/settings', icon: Settings },
   ];
