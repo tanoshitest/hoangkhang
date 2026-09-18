@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Search, Filter, MoreHorizontal, BookOpen, Users, Calendar, ArrowLeft } from 'lucide-react';
+import { SalesTabs } from '@/components/SalesTabs';
 
 interface Enrollment {
   id: string;
@@ -122,7 +123,8 @@ export default function EnrollmentsPage() {
       <div className="max-w-7xl mx-auto">
         <div className="md:flex md:items-center md:justify-between">
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold tracking-tight text-slate-900">Ghi danh</h1>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">Quản lý tuyển sinh</h1>
+            <p className="text-sm text-slate-500">Ghi danh vào khóa học</p>
           </div>
           <div className="mt-4 flex md:mt-0 md:ml-4">
             <button 
@@ -133,6 +135,10 @@ export default function EnrollmentsPage() {
               Đăng ký mới
             </button>
           </div>
+        </div>
+
+        <div className="mt-4">
+          <SalesTabs />
         </div>
 
         {/* Search and Filter */}

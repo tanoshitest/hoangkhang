@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
-  LayoutDashboard, Users, GraduationCap, BookOpen, Calendar, CreditCard,
-  BarChart3, Settings, LogOut, Menu, X, Bell, ClipboardList, AlertTriangle,
+  LayoutDashboard, GraduationCap, BookOpen, Calendar, CreditCard,
+  BarChart3, Settings, LogOut, Menu, X, Bell, AlertTriangle, Target,
   UserCheck, Wallet, Kanban, School, UserCog, ClipboardCheck, TrendingUp, LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -17,19 +17,14 @@ interface User {
   roles: string[];
 }
 
-type NavItem = { href: string; label: string; icon: LucideIcon; adminOnly?: boolean };
+type NavItem = { href: string; label: string; icon: LucideIcon; adminOnly?: boolean; match?: string[] };
 type NavGroup = { title?: string; items: NavItem[] };
 
 const NAV: NavGroup[] = [
   {
-    items: [{ href: '/dashboard', label: 'Tổng quan', icon: LayoutDashboard }],
-  },
-  {
-    title: 'Tuyển sinh',
     items: [
-      { href: '/leads', label: 'Khách hàng tiềm năng', icon: Users },
-      { href: '/leads/kanban', label: 'Phễu bán hàng', icon: Kanban },
-      { href: '/enrollments', label: 'Ghi danh', icon: ClipboardList },
+      { href: '/dashboard', label: 'Tổng quan', icon: LayoutDashboard },
+      { href: '/leads', label: 'Quản lý tuyển sinh', icon: Target, match: ['/leads', '/enrollments'] },
     ],
   },
   {
@@ -148,13 +143,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     .filter(g => g.items.length > 0);
 
   const navHrefs = groups.flatMap(g => g.items.map(i => i.href));
-  const isActive = (href: string) => {
-    if (pathname === href) return true;
-    if (!pathname.startsWith(`${href}/`)) return false;
-    return !navHrefs.some(
-      other => other !== href && other.startsWith(`${href}/`) &&
-        (pathname === other || pathname.startsWith(`${other}/`)),
-    );
+  const isActive = (item: NavItem) => {
+    const prefixes = item.match || [item.href];
+    return prefixes.some((prefix) => {
+      if (pathname === prefix) return true;
+      if (!pathname.startsWith(`${prefix}/`)) return false;
+      return !navHrefs.some(
+        other => other !== prefix && other.startsWith(`${prefix}/`) &&
+          (pathname === other || pathname.startsWith(`${other}/`)),
+      );
+    });
   };
 
   return (
@@ -198,7 +196,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <ul>
                 {group.items.map(item => {
                   const Icon = item.icon;
-                  const active = isActive(item.href);
+                  const active = isActive(item);
                   return (
                     <li key={item.href}>
                       <Link

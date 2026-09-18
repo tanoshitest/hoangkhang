@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, MoreHorizontal, GripVertical } from 'lucide-react';
+import { Plus, MoreHorizontal, GripVertical } from 'lucide-react';
+import { SalesTabs } from '@/components/SalesTabs';
 
 interface Lead {
   id: string;
@@ -151,20 +152,12 @@ export default function LeadKanbanPage() {
     <div>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <button
-                onClick={() => router.push('/leads')}
-                className="mr-4 p-2 text-slate-400 hover:text-slate-600"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </button>
-              <div>
-                <h1 className="text-xl font-bold tracking-tight text-slate-900">Bảng Kanban</h1>
-                <p className="text-sm text-slate-500">Kéo thả để chuyển trạng thái khách hàng</p>
-              </div>
-            </div>
+        <div className="md:flex md:items-center md:justify-between">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">Quản lý tuyển sinh</h1>
+            <p className="text-sm text-slate-500">Kéo thả để chuyển trạng thái khách hàng</p>
+          </div>
+          <div className="mt-4 md:mt-0 md:ml-4">
             <button
               onClick={() => router.push('/leads/new')}
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
@@ -173,6 +166,10 @@ export default function LeadKanbanPage() {
               Thêm KH tiềm năng
             </button>
           </div>
+        </div>
+
+        <div className="mt-4 mb-6">
+          <SalesTabs />
         </div>
 
         {/* Bảng Kanban */}

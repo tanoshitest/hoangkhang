@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Search, Filter, MoreHorizontal, Kanban, Users } from 'lucide-react';
+import { Plus, Search, Filter, MoreHorizontal, Users } from 'lucide-react';
+import { SalesTabs } from '@/components/SalesTabs';
 
 interface Lead {
   id: string;
@@ -92,16 +93,10 @@ export default function LeadsPage() {
       <div className="max-w-7xl mx-auto">
         <div className="md:flex md:items-center md:justify-between">
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold tracking-tight text-slate-900">Tuyển sinh</h1>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">Quản lý tuyển sinh</h1>
+            <p className="text-sm text-slate-500">Khách hàng tiềm năng</p>
           </div>
           <div className="mt-4 flex md:mt-0 md:ml-4 space-x-3">
-            <button 
-              onClick={() => router.push('/leads/kanban')}
-              className="inline-flex items-center px-4 py-2 border border-slate-300 rounded-lg shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50"
-            >
-              <Kanban className="mr-2 h-4 w-4" />
-              Kanban
-            </button>
             <button 
               onClick={() => router.push('/leads/new')}
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
@@ -110,6 +105,10 @@ export default function LeadsPage() {
               Thêm KH tiềm năng
             </button>
           </div>
+        </div>
+
+        <div className="mt-4">
+          <SalesTabs />
         </div>
 
         {/* Search and Filter */}
