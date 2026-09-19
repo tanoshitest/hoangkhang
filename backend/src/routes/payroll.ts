@@ -2,6 +2,8 @@ import { Router } from 'express';
 import type { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { requirePermission } from '../middleware/rbac';
+import { getNum } from '../lib/settings';
+import { auditLog } from './admin';
 import type { AuthenticatedRequest } from '../types';
 
 const router = Router();
@@ -118,7 +120,11 @@ router.get('/periods/:id', requirePermission('teachers', 'read'), async (req: Au
   }
 });
 
-// POST /api/payroll/periods/generate - Generate payroll from sessions in date range
+// POST /api/payroll/periods/generate - Bảng lương tuần (chốt T7)
+// Lớp 1-1: giờ × đơn giá DON_GIA_GV (level × trạng thái GV; fallback: đơn giá riêng GV)
+// Lớp nhóm: ratio × revenuePerHour × giờ — ratio = sàn 15% + 2%/HV vượt min,
+//           revenuePerHour = Σ(finalFee / totalHours) của các enrollment đang học trong lớp
+// Dạy thay: session.teacherId = GV thực dạy → tự trả cho người dạy
 router.post('/periods/generate', requirePermission('teachers', 'write'), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { teacherId, periodStart, periodEnd } = req.body;
@@ -142,33 +148,62 @@ router.post('/periods/generate', requirePermission('teachers', 'write'), async (
         status: { in: ['taught', 'makeup'] },
       },
       include: {
-        class: { select: { code: true, format: true } },
-        payrollItems: {
-          where: { period: { status: { in: ['confirmed', 'paid'] } } },
+        class: {
+          select: {
+            id: true, code: true, format: true, classType: true,
+            minStudents: true, currentStudents: true,
+            mainTeacherId: true, supportTeacherId: true,
+            course: { select: { priceLevel: true, code: true } },
+          },
         },
+        payrollItems: { select: { id: true } }, // đã nằm trong kỳ lương nào (draft kể cả) → không tạo trùng
       },
       orderBy: { date: 'asc' },
     });
 
     const billableSessions = sessions.filter(s => s.payrollItems.length === 0);
+    const skippedBilled = sessions.length - billableSessions.length;
 
-    // Resolve rate per session date (rate effective at session date, role=main)
-    const rates = await prisma.teacherRate.findMany({
+    // Đơn giá riêng theo GV (legacy, ưu tiên hơn DON_GIA_GV chung)
+    const teacherRates = await prisma.teacherRate.findMany({
       where: { teacherId, role: 'main' },
       orderBy: { effectiveFrom: 'desc' },
     });
-    const rateFor = (date: Date, classType: string | null) => {
-      const r = rates.find(rt =>
+    const teacherRateFor = (date: Date, classType: string | null) => {
+      const r = teacherRates.find(rt =>
         rt.effectiveFrom <= date &&
         (!rt.effectiveTo || rt.effectiveTo > date) &&
         (rt.classType === null || rt.classType === classType)
-      ) || rates.find(rt =>
-        rt.effectiveFrom <= date &&
-        (!rt.effectiveTo || rt.effectiveTo > date) &&
-        rt.classType === null
       );
+      return r?.rate || null;
+    };
+
+    // DON_GIA_GV chung: teacherId=null, key = level + employmentStatus
+    const globalRates = await prisma.teacherRate.findMany({
+      where: { teacherId: null },
+    });
+    const globalRateFor = (level: string | undefined, status: string) => {
+      const r = globalRates.find(g => g.level === level && g.employmentStatus === status)
+        || globalRates.find(g => g.level === level && g.employmentStatus === 'official');
       return r?.rate || 0;
     };
+
+    // Lương nhóm settings
+    const floorRatio = await getNum('group_payroll_floor_ratio', 0.15);
+    const extraPerStudent = await getNum('group_payroll_extra_per_student', 0.02);
+    const groupMin = await getNum('group_min_students', 2);
+
+    // revenuePerHour theo lớp: Σ(finalFee/totalHours) của enrollments đang học
+    const classIds = [...new Set(billableSessions.map(s => s.classId))];
+    const enrollments = await prisma.enrollment.findMany({
+      where: { classId: { in: classIds }, status: { in: ['studying', 'reserved', 'enrolled'] } },
+      select: { classId: true, revenuePerHour: true, finalFee: true, totalHours: true },
+    });
+    const classRevPerHour: Record<string, number> = {};
+    for (const e of enrollments) {
+      const rph = e.revenuePerHour ?? (e.totalHours ? e.finalFee / e.totalHours : 0);
+      classRevPerHour[e.classId!] = (classRevPerHour[e.classId!] || 0) + rph;
+    }
 
     const hoursFor = (s: typeof sessions[0]) => {
       if (s.calculatedHours) return s.calculatedHours;
@@ -179,30 +214,99 @@ router.post('/periods/generate', requirePermission('teachers', 'write'), async (
 
     const items = billableSessions.map(s => {
       const hours = hoursFor(s);
-      const rate = rateFor(s.date, s.class.format);
+      const isGroup = s.class.classType !== 'one_on_one';
+      // dạy thay: GV thực dạy ≠ GV chính → trả người thực dạy, đánh dấu substitute
+      const type = s.status === 'makeup' ? 'makeup'
+        : (s.class.mainTeacherId && s.teacherId !== s.class.mainTeacherId) ? 'substitute' : 'teaching';
+
+      if (isGroup) {
+        const enrolled = Math.max(s.class.currentStudents, groupMin);
+        const ratio = floorRatio + extraPerStudent * Math.max(0, enrolled - groupMin);
+        const revenuePerHour = classRevPerHour[s.classId] || 0;
+        return {
+          sessionId: s.id,
+          classId: s.classId,
+          type,
+          date: s.date,
+          hours,
+          rate: 0,
+          ratio,
+          revenuePerHour,
+          amount: Math.round(ratio * revenuePerHour * hours),
+          description: `${s.class.code} • ${s.startTime}-${s.endTime} • nhóm ${enrolled}HV • ${Math.round(ratio * 100)}% × ${new Intl.NumberFormat('vi-VN').format(Math.round(revenuePerHour))}đ/giờ`,
+        };
+      }
+
+      // 1-1: giờ × đơn giá (GV riêng → DON_GIA_GV theo level × trạng thái)
+      const rate = teacherRateFor(s.date, s.class.format)
+        ?? globalRateFor(s.class.course.priceLevel || undefined, teacher.employmentStatus);
       return {
         sessionId: s.id,
-        type: s.status === 'makeup' ? 'makeup' : 'regular',
+        classId: s.classId,
+        type,
         date: s.date,
         hours,
         rate,
-        amount: hours * rate,
-        description: `${s.class.code} • ${s.startTime}-${s.endTime}`,
+        amount: Math.round(hours * rate),
+        description: `${s.class.code} • ${s.startTime}-${s.endTime} • 1-1 ${s.class.course.priceLevel || ''} • ${new Intl.NumberFormat('vi-VN').format(rate)}đ/giờ (${teacher.employmentStatus === 'probation' ? 'thử việc' : 'chính thức'})`,
       };
     });
 
-    const totalHours = items.reduce((s, i) => s + i.hours, 0);
-    const totalAmount = items.reduce((s, i) => s + i.amount, 0);
+    // Thưởng JLPT: HV trong lớp GV phụ trách đậu JLPT trong kỳ
+    const bonusJlpt = await getNum('bonus_jlpt_pass', 200000);
+    const teacherClassIds = await prisma.class.findMany({
+      where: { OR: [{ mainTeacherId: teacherId }, { supportTeacherId: teacherId }] },
+      select: { id: true, code: true },
+    });
+    const tClassIds = teacherClassIds.map(c => c.id);
+    const passedStudents = tClassIds.length > 0 ? await prisma.assessment.findMany({
+      where: {
+        type: 'jlpt_real',
+        passed: true,
+        date: { gte: start, lte: end },
+        student: { classMembers: { some: { classId: { in: tClassIds }, status: 'active' } } },
+      },
+      include: { student: { select: { code: true, name: true } } },
+    }) : [];
+
+    // Chống trùng bonus: đã có item bonus cùng mô tả trong kỳ lương khác của GV này
+    const existingBonusDescs = new Set(
+      (await prisma.teacherPayrollItem.findMany({
+        where: { type: 'bonus', period: { teacherId } },
+        select: { description: true },
+      })).map(i => i.description).filter(Boolean)
+    );
+
+    const bonusItems = passedStudents
+      .map(a => ({
+      classId: null as string | null,
+      type: 'bonus',
+      bonusType: 'jlpt_pass',
+      bonusAmount: bonusJlpt,
+      date: a.date,
+      hours: 0,
+      rate: 0,
+      amount: bonusJlpt,
+      description: `Thưởng đậu JLPT — ${a.student.name} (${a.student.code})`,
+      }))
+      .filter(i => !existingBonusDescs.has(i.description!));
+
+    const allItems = [...items, ...bonusItems];
+    const totalHours = allItems.reduce((s, i) => s + i.hours, 0);
+    const totalAmount = allItems.reduce((s, i) => s + i.amount, 0);
+    const totalBonus = bonusItems.reduce((s, i) => s + i.amount, 0);
 
     const period = await prisma.teacherPayrollPeriod.create({
       data: {
         teacherId,
         periodStart: start,
         periodEnd: end,
+        periodType: 'weekly',
         status: 'draft',
         totalHours,
         totalAmount,
-        items: { create: items },
+        totalBonus,
+        items: { create: allItems.map(({ classId, ...rest }) => ({ ...rest, classId: classId || undefined })) },
       },
       include: {
         teacher: { select: { id: true, code: true, name: true } },
@@ -210,8 +314,12 @@ router.post('/periods/generate', requirePermission('teachers', 'write'), async (
       },
     });
 
-    res.status(201).json(period);
+    await auditLog(req.user!.id, 'payroll_generate', 'TeacherPayrollPeriod', period.id,
+      undefined, { totalAmount, totalHours, sessions: items.length, bonuses: bonusItems.length, skippedBilled });
+
+    res.status(201).json({ ...period, skippedBilled });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Failed to generate payroll' });
   }
 });
@@ -225,7 +333,7 @@ router.post('/periods/:id/items', requirePermission('teachers', 'write'), async 
       return res.status(409).json({ error: 'Cannot modify confirmed/paid period' });
     }
 
-    const { type, hours, amount, description, date } = req.body;
+    const { type, hours, amount, description, date, bonusType, bonusAmount } = req.body;
     if (amount === undefined) {
       return res.status(400).json({ error: 'amount required' });
     }
@@ -237,18 +345,25 @@ router.post('/periods/:id/items', requirePermission('teachers', 'write'), async 
         date: date ? new Date(date) : new Date(),
         hours: hours || 0,
         rate: 0,
+        bonusType: bonusType || null,
+        bonusAmount: bonusAmount || 0,
         amount,
         description,
       },
     });
 
-    const newTotal = period.totalAmount + amount;
-    const newHours = period.totalHours + (hours || 0);
+    const isBonus = item.type === 'bonus';
     await prisma.teacherPayrollPeriod.update({
       where: { id: period.id },
-      data: { totalAmount: newTotal, totalHours: newHours },
+      data: {
+        totalAmount: period.totalAmount + amount,
+        totalHours: period.totalHours + (hours || 0),
+        totalBonus: period.totalBonus + (isBonus ? amount : 0),
+      },
     });
 
+    await auditLog(req.user!.id, 'payroll_item_add', 'TeacherPayrollItem', item.id,
+      undefined, { periodId: period.id, type: item.type, amount });
     res.status(201).json(item);
   } catch (error) {
     res.status(500).json({ error: 'Failed to add item' });
@@ -275,8 +390,11 @@ router.delete('/periods/:periodId/items/:itemId', requirePermission('teachers', 
       data: {
         totalAmount: period.totalAmount - item.amount,
         totalHours: period.totalHours - item.hours,
+        totalBonus: period.totalBonus - (item.type === 'bonus' ? item.amount : 0),
       },
     });
+    await auditLog(req.user!.id, 'payroll_item_delete', 'TeacherPayrollItem', item.id,
+      { periodId: period.id, type: item.type, amount: item.amount }, undefined);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete item' });
@@ -292,10 +410,28 @@ router.post('/periods/:id/confirm', requirePermission('teachers', 'write'), asyn
       return res.status(409).json({ error: `Period already ${period.status}` });
     }
 
+    // Safety net: session của kỳ này không được nằm trong kỳ confirmed/paid khác
+    const dupItems = await prisma.teacherPayrollItem.count({
+      where: {
+        periodId: period.id,
+        sessionId: { not: null },
+        OR: [{
+          session: {
+            payrollItems: { some: { period: { status: { in: ['confirmed', 'paid'] }, id: { not: period.id } } } },
+          },
+        }],
+      },
+    });
+    if (dupItems > 0) {
+      return res.status(409).json({ error: `${dupItems} buổi học đã được trả lương ở kỳ khác — xóa item trùng trước khi chốt` });
+    }
+
     const updated = await prisma.teacherPayrollPeriod.update({
       where: { id: period.id },
       data: { status: 'confirmed', confirmedBy: req.user!.id, confirmedAt: new Date() },
     });
+    await auditLog(req.user!.id, 'payroll_confirm', 'TeacherPayrollPeriod', period.id,
+      { status: 'draft' }, { status: 'confirmed', totalAmount: period.totalAmount });
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: 'Failed to confirm period' });
@@ -315,9 +451,28 @@ router.post('/periods/:id/pay', requirePermission('teachers', 'write'), async (r
       where: { id: period.id },
       data: { status: 'paid', paidAt: new Date() },
     });
+    await auditLog(req.user!.id, 'payroll_pay', 'TeacherPayrollPeriod', period.id,
+      { status: 'confirmed' }, { status: 'paid', totalAmount: period.totalAmount });
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: 'Failed to mark paid' });
+  }
+});
+
+// DELETE /api/payroll/periods/:id - Xóa kỳ lương draft (để tạo lại)
+router.delete('/periods/:id', requirePermission('teachers', 'write'), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const period = await prisma.teacherPayrollPeriod.findUnique({ where: { id: req.params.id } });
+    if (!period) return res.status(404).json({ error: 'Period not found' });
+    if (period.status !== 'draft') {
+      return res.status(409).json({ error: 'Chỉ xóa được kỳ lương ở trạng thái draft' });
+    }
+    await prisma.teacherPayrollPeriod.delete({ where: { id: period.id } }); // items cascade
+    await auditLog(req.user!.id, 'payroll_delete_draft', 'TeacherPayrollPeriod', period.id,
+      { status: 'draft', totalAmount: period.totalAmount }, undefined);
+    res.json({ deleted: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete period' });
   }
 });
 

@@ -52,11 +52,13 @@ const NAV: NavGroup[] = [
       { href: '/finance', label: 'Tài chính', icon: CreditCard },
       { href: '/finance/receivables', label: 'Quản lý học phí', icon: HandCoins },
       { href: '/payroll', label: 'Bảng lương', icon: Wallet },
+      { href: '/commissions', label: 'Hoa hồng', icon: TrendingUp },
     ],
   },
   {
     title: 'Hệ thống',
     items: [
+      { href: '/approvals', label: 'Phê duyệt', icon: ClipboardCheck },
       { href: '/reports', label: 'Báo cáo', icon: BarChart3 },
       { href: '/notifications', label: 'Thông báo', icon: Bell },
       { href: '/settings', label: 'Cấu hình', icon: Settings, adminOnly: true },

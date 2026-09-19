@@ -3,6 +3,7 @@ import type { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { requirePermission } from '../middleware/rbac';
 import { getNum } from '../lib/settings';
+import { auditLog } from './admin';
 import { z } from 'zod';
 import type { AuthenticatedRequest } from '../types';
 
@@ -347,6 +348,13 @@ router.post('/:id/attendance', requirePermission('attendance', 'write'), async (
         }
       }
     }
+
+    await auditLog(req.user!.id, 'attendance_save', 'Session', id, undefined, {
+      classCode: session.class?.code,
+      records: results.length,
+      absents: results.filter(r => ['excused_absent', 'unexcused_absent'].includes(r.status)).length,
+      warningsCreated: warned.length,
+    });
 
     res.json({ saved: results.length, attendances: results, warningsCreated: warned.length });
   } catch (error) {

@@ -13,19 +13,20 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     'courses:read', 'courses:write', 'classes:read', 'classes:write',
     'sessions:read', 'sessions:write', 'attendance:read', 'attendance:write',
     'finance:read', 'teachers:read', 'teachers:write', 'reports:read',
-    'commissions:read', 'chat:use'
+    'commissions:read', 'chat:use', 'approvals:write', 'approvals:read'
   ],
   sales: [
     'leads:*', 'students:read', 'classes:read', 'reports:own',
-    'commissions:read', 'chat:use'
+    'commissions:read', 'chat:use', 'approvals:write', 'approvals:read'
   ],
   sales_leader: [
     'leads:*', 'students:read', 'classes:read', 'reports:read',
-    'approvals:read', 'approvals:level1', 'commissions:read', 'chat:use'
+    'approvals:read', 'approvals:write', 'approvals:level1', 'commissions:read', 'chat:use'
   ],
   academic: [
     'leads:read', 'students:*', 'courses:*', 'classes:*', 'sessions:*',
-    'attendance:*', 'teachers:read', 'finance:read', 'reports:academic'
+    'attendance:*', 'teachers:read', 'finance:read', 'reports:academic',
+    'approvals:write', 'approvals:read'
   ],
   teacher: [
     'students:assigned', 'classes:assigned', 'sessions:assigned',
@@ -33,7 +34,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   ],
   accountant: [
     'leads:read', 'students:read', 'classes:read', 'finance:*',
-    'teachers:read', 'reports:finance'
+    'teachers:read', 'reports:finance', 'commissions:*'
   ]
 };
 

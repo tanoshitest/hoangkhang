@@ -58,10 +58,10 @@ async function syncReceivableStatus(receivableId: string) {
 // Số phiếu thu PT#### — tự tăng qua counter trong settings, KHÔNG tái sử dụng khi xóa/hủy (spec BR)
 async function nextReceiptNo(): Promise<{ no: number; code: string }> {
   const prefix = await getSetting('receipt_prefix', 'PT');
-  const rows = await prisma.$queryRaw<{ n: number }[]>`
+  const rows = await prisma.$queryRaw<{ n: number | bigint }[]>`
     UPDATE settings SET value = CAST(CAST(value AS INTEGER) + 1 AS TEXT)
     WHERE key = 'receipt_seq' RETURNING CAST(value AS INTEGER) AS n`;
-  let no = rows[0]?.n;
+  let no = rows[0]?.n != null ? Number(rows[0].n) : undefined; // sqlite trả BigInt
   if (!no) {
     // First run: seed counter above current max receiptNo
     const max = await prisma.payment.aggregate({ _max: { receiptNo: true } });
@@ -111,6 +111,41 @@ async function applyDepositToTuition(depositPayment: { id: string; code: string;
     data: { depositApplied: { increment: applyAmount } },
   });
   await syncReceivableStatus(tuition.id);
+}
+
+// Sau khi receivable → paid: đánh dấu commission đủ điều kiện chi
+async function checkCommissionEligibility(receivableId: string, userId?: string) {
+  const recv = await prisma.receivable.findUnique({
+    where: { id: receivableId },
+    select: { enrollmentId: true },
+  });
+  if (!recv?.enrollmentId) return;
+  const enrollment = await prisma.enrollment.findUnique({
+    where: { id: recv.enrollmentId },
+    include: { receivables: { select: { status: true, periodType: true } } },
+  });
+  if (!enrollment) return;
+
+  const isOneOnOne = enrollment.billingType === 'monthly';
+  const tuition = enrollment.receivables.filter(r => r.periodType !== 'deposit');
+  const ok = isOneOnOne
+    ? (tuition.find(r => r.periodType === 'monthly') || tuition[0])?.status === 'paid'
+    : tuition.length > 0 && tuition.every(r => r.status === 'paid');
+  if (!ok) return;
+
+  const pending = await prisma.commission.findMany({
+    where: { enrollmentId: enrollment.id, status: 'pending' },
+    select: { id: true, amount: true },
+  });
+  if (pending.length === 0) return;
+  await prisma.commission.updateMany({
+    where: { id: { in: pending.map(c => c.id) } },
+    data: { status: 'eligible', eligibleAt: new Date() },
+  });
+  for (const c of pending) {
+    if (userId) await auditLog(userId, 'commission_eligible', 'Commission', c.id,
+      { status: 'pending' }, { status: 'eligible', amount: c.amount, trigger: 'tuition_collected' });
+  }
 }
 
 // ==================== RECEIVABLES ====================
@@ -340,6 +375,8 @@ router.post('/receivables/:id/payments', requirePermission('finance', 'write'), 
       },
     });
 
+    await auditLog(req.user!.id, 'payment_create', 'Payment', payment.id, undefined,
+      { code, amount, itemType: payment.itemType, receivableId: receivable.id });
     res.status(201).json(payment);
   } catch (error) {
     res.status(500).json({ error: 'Failed to create payment' });
@@ -371,6 +408,9 @@ router.post('/payments/:id/confirm', requirePermission('finance', 'write'), asyn
     if (updated.itemType === 'deposit') {
       await applyDepositToTuition({ ...updated, confirmedBy: req.user!.id });
     }
+    await checkCommissionEligibility(payment.receivableId, req.user!.id);
+    await auditLog(req.user!.id, 'payment_confirm', 'Payment', payment.id,
+      { status: 'pending' }, { status: 'confirmed', amount: payment.amount, code: payment.code });
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: 'Failed to confirm payment' });
@@ -392,6 +432,8 @@ router.post('/payments/:id/cancel', requirePermission('finance', 'write'), async
       where: { id: payment.id },
       data: { status: 'cancelled' },
     });
+    await auditLog(req.user!.id, 'payment_cancel', 'Payment', payment.id,
+      { status: payment.status }, { status: 'cancelled', amount: payment.amount, code: payment.code });
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: 'Failed to cancel payment' });

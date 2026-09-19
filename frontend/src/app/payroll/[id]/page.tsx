@@ -12,6 +12,10 @@ interface Item {
   hours: number;
   rate: number;
   amount: number;
+  ratio?: number | null;
+  revenuePerHour?: number | null;
+  bonusType?: string | null;
+  bonusAmount?: number | null;
   description: string | null;
   session: { class: { code: string } } | null;
 }
@@ -30,12 +34,18 @@ interface Period {
 }
 
 const TYPE_LABELS: Record<string, { label: string; color: string }> = {
+  teaching: { label: 'Giờ dạy', color: 'bg-brand-100 text-brand-800' },
   regular: { label: 'Buổi thường', color: 'bg-brand-100 text-brand-800' },
   makeup: { label: 'Dạy bù', color: 'bg-purple-100 text-purple-800' },
   substitute: { label: 'Dạy thay', color: 'bg-indigo-100 text-indigo-800' },
+  bonus: { label: 'Thưởng', color: 'bg-green-100 text-green-800' },
   trial: { label: 'Học thử', color: 'bg-teal-100 text-teal-800' },
   cancelled: { label: 'Hủy lớp', color: 'bg-slate-100 text-slate-600' },
   adjustment: { label: 'Cộng/trừ', color: 'bg-yellow-100 text-yellow-800' },
+};
+
+const BONUS_LABELS: Record<string, string> = {
+  retention: 'Giữ sĩ số', jlpt_pass: 'Đậu JLPT', referral: 'Giới thiệu HV',
 };
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -224,8 +234,13 @@ export default function PayrollDetailPage({ params }: { params: Promise<{ id: st
                         )}
                       </div>
                       <p className="text-sm text-slate-500 mt-1">
+                        {item.bonusType && (
+                          <span className="mr-1 text-green-700 font-medium">[{BONUS_LABELS[item.bonusType] || item.bonusType}]</span>
+                        )}
                         {item.description || ''}
-                        {item.hours > 0 && ` • ${item.hours.toFixed(1)}h × ${formatVND(item.rate)}`}
+                        {item.hours > 0 && item.rate > 0 && ` • ${item.hours.toFixed(1)}h × ${formatVND(item.rate)}`}
+                        {item.ratio != null && item.revenuePerHour != null &&
+                          ` • ${item.hours.toFixed(1)}h × ${Math.round(item.ratio * 100)}% × ${formatVND(item.revenuePerHour)}/h`}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">

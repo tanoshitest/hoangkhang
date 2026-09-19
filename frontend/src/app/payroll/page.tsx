@@ -11,8 +11,10 @@ interface Period {
   periodStart: string;
   periodEnd: string;
   status: string;
+  periodType?: string;
   totalHours: number;
   totalAmount: number;
+  totalBonus?: number;
   _count: { items: number };
 }
 
@@ -98,7 +100,7 @@ export default function PayrollPage() {
         {showGenerate && (
           <div className="mt-6 bg-brand-50 border border-brand-200 rounded-lg p-6">
             <h3 className="text-md font-medium text-slate-900 mb-4">
-              Tạo bảng lương từ các buổi đã dạy (hệ thống tự tính giờ × đơn giá hiệu lực)
+              Tạo bảng lương tuần (chốt Thứ 7) — lớp 1-1: giờ × đơn giá DON_GIA_GV; lớp nhóm: tỷ lệ × doanh thu ghi nhận
             </h3>
             <form onSubmit={generate} className="grid grid-cols-1 gap-4 sm:grid-cols-4">
               <div className="sm:col-span-2">
@@ -163,6 +165,7 @@ export default function PayrollPage() {
                       <p className="text-sm font-semibold text-slate-900">{formatVND(p.totalAmount)}</p>
                       <p className="text-xs text-slate-500 flex items-center justify-end">
                         <Clock className="h-3 w-3 mr-1" /> {p.totalHours.toFixed(1)} giờ
+                        {(p.totalBonus ?? 0) > 0 && <span className="ml-1 text-green-600">+{formatVND(p.totalBonus!)} thưởng</span>}
                       </p>
                     </div>
                   </div>
