@@ -2,7 +2,7 @@
 set -e
 
 echo "Syncing database schema..."
-npx prisma db push --schema prisma/schema.prod.prisma
+npx prisma db push --schema prisma/schema.prod.prisma --accept-data-loss
 
 if [ "$SEED_DB" = "true" ]; then
   echo "Seeding database (SEED_DB=true)..."

@@ -13,19 +13,32 @@ datasource db {
 // ==================== AUTH ====================
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  phone     String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(uuid())
+  email        String   @unique
+  password     String? // nullable: student accounts login via Google only
+  name         String
+  phone        String?
+  isActive     Boolean  @default(true)
+  googleId     String?  @unique
+  authProvider String   @default("password") // password, google
+  studentId    String?  @unique // linked student record (portal)
+  teacherId    String?  @unique // linked teacher record (portal)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  roles       UserRole[]
-  auditLogs   AuditLog[]
-  notifications Notification[]
-  assignedLeads Lead[]    @relation("LeadAssignedTo")
+  roles                    UserRole[]
+  auditLogs                AuditLog[]
+  notifications            Notification[]
+  assignedLeads            Lead[]                    @relation("LeadAssignedTo")
+  student                  Student?                  @relation("StudentAccount", fields: [studentId], references: [id])
+  teacher                  Teacher?                  @relation("TeacherAccount", fields: [teacherId], references: [id])
+  collectedPayments        Payment[]                 @relation("PaymentCollector")
+  saleEnrollments1         Enrollment[]              @relation("EnrollmentSale1")
+  saleEnrollments2         Enrollment[]              @relation("EnrollmentSale2")
+  commissions              Commission[]
+  approvalsRequested       Approval[]
+  conversationParticipants ConversationParticipant[]
+  messages                 Message[]
 
   @@map("users")
 }
@@ -48,12 +61,12 @@ model Role {
 model Permission {
   id          String   @id @default(uuid())
   name        String   @unique // leads:read, leads:write, etc
-  module      String   // leads, students, finance, etc
-  action      String   // read, write, delete
+  module      String // leads, students, finance, etc
+  action      String // read, write, delete
   description String?
   createdAt   DateTime @default(now())
 
-  roles       RolePermission[]
+  roles RolePermission[]
 
   @@map("permissions")
 }
@@ -85,44 +98,55 @@ model RolePermission {
 // ==================== CRM - LEAD ====================
 
 model Lead {
-  id              String   @id @default(uuid())
-  code            String   @unique
-  name            String
-  birthYear       Int?
-  phone           String   @unique
-  zalo            String?
-  email           String?
-  province        String?
-  educationLevel  String?
-  goal            String?
-  japanProgram    String?
-  availableTime   String?
-  source          String   // facebook, tiktok, website, ads, referral, teacher, other
-  assignedToId    String?
-  receivedDate    DateTime @default(now())
-  lastContactDate DateTime?
-  nextFollowUpDate DateTime?
-  status          String   // new, assigned, contacted, consulting, test_pending, trial, decision_pending, registered, not_registered
-  interestedCourse String?
-  expectedClass   String?
-  notRegisteredReason String?
-  notes           String?
+  id                   String    @id @default(uuid())
+  code                 String    @unique
+  name                 String
+  birthYear            Int?
+  phone                String // not unique: duplicates allowed then merged (Q42)
+  zalo                 String?
+  email                String?
+  province             String?
+  educationLevel       String?
+  goal                 String?
+  japanProgram         String?
+  availableTime        String?
+  source               String // facebook, zalo, tiktok, website, youtube, referral, ads, other
+  leadType             String? // center, self_sourced, ctv (drives commission rate)
+  assignedToId         String?
+  receivedDate         DateTime  @default(now())
+  lastContactDate      DateTime?
+  lastInteractionDate  DateTime? // any interaction — dead-lead detection (Q41)
+  nextFollowUpDate     DateTime?
+  status               String // new, contacted, test_scheduled, tested, thinking, nurturing, not_potential, enrolled
+  interestedCourse     String?
+  expectedClass        String?
+  notRegisteredReason  String?
+  contactDetail        String? // chi tiết liên hệ / lý do (spec cột "Chi tiết liên hệ / lý do")
+  testDate             DateTime? // ngày hẹn test đầu vào
+  testResult           String? // kết quả test đầu vào
+  deadAt               DateTime? // marked dead: not_potential + 90d no interaction
+  mergedIntoId         String? // merged duplicate -> canonical lead id
+  notes                String?
   convertedToStudentId String? // student.id if converted
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
-  assignedTo      User?     @relation("LeadAssignedTo", fields: [assignedToId], references: [id])
-  activities      LeadActivity[]
-  followUps       LeadFollowUp[]
-  trialTests      TrialTest[]
+  assignedTo User?          @relation("LeadAssignedTo", fields: [assignedToId], references: [id])
+  mergedInto Lead?          @relation("LeadMergedInto", fields: [mergedIntoId], references: [id])
+  mergedFrom Lead[]         @relation("LeadMergedInto")
+  activities LeadActivity[]
+  followUps  LeadFollowUp[]
+  trialTests TrialTest[]
 
+  @@index([phone])
+  @@index([status])
   @@map("leads")
 }
 
 model LeadActivity {
   id        String   @id @default(uuid())
   leadId    String
-  type      String   // call, message, email, meeting
+  type      String // call, message, email, meeting
   content   String
   createdAt DateTime @default(now())
   createdBy String
@@ -137,7 +161,7 @@ model LeadFollowUp {
   leadId    String
   date      DateTime
   content   String
-  status    String   // scheduled, done, overdue
+  status    String // scheduled, done, overdue
   createdAt DateTime @default(now())
   createdBy String
 
@@ -149,7 +173,7 @@ model LeadFollowUp {
 model TrialTest {
   id        String   @id @default(uuid())
   leadId    String
-  type      String   // placement_test, trial_class
+  type      String // placement_test, trial_class
   date      DateTime
   result    String?
   notes     String?
@@ -164,12 +188,12 @@ model TrialTest {
 // ==================== STUDENT ====================
 
 model Student {
-  id                  String   @id @default(uuid())
-  code                String   @unique
+  id                  String    @id @default(uuid())
+  code                String    @unique
   name                String
   birthDate           DateTime?
-  gender              String?   // male, female, other
-  phone               String   @unique
+  gender              String? // male, female, other
+  phone               String    @unique
   email               String?
   address             String?
   emergencyContact    String?
@@ -179,7 +203,7 @@ model Student {
   currentCourse       String?
   currentClass        String?
   assignedTeacher     String?
-  registeredDate      DateTime @default(now())
+  registeredDate      DateTime  @default(now())
   startDate           DateTime?
   expectedEndDate     DateTime?
   completedDate       DateTime?
@@ -187,20 +211,21 @@ model Student {
   supportNeeds        String?
   notes               String?
   referredBy          String?
-  status              String   // waiting_class, studying, reserved, transferred, dropped, completed
-  convertedFromLeadId String?  // lead.id if converted
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  status              String // waiting_class, studying, reserved, transferred, dropped, completed
+  convertedFromLeadId String? // lead.id if converted
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
-  contacts            StudentContact[]
-  enrollments         Enrollment[]
-  attendances         Attendance[]
-  learningProgress    LearningProgress[]
-  receivables         Receivable[]
-  warnings            AcademicWarning[]
-  attachments         Attachment[]
-  classMembers        ClassMember[]
-  assessments         Assessment[]
+  contacts         StudentContact[]
+  enrollments      Enrollment[]
+  attendances      Attendance[]
+  learningProgress LearningProgress[]
+  receivables      Receivable[]
+  warnings         AcademicWarning[]
+  attachments      Attachment[]
+  classMembers     ClassMember[]
+  assessments      Assessment[]
+  userAccount      User?              @relation("StudentAccount")
 
   @@map("students")
 }
@@ -209,7 +234,7 @@ model StudentContact {
   id        String   @id @default(uuid())
   studentId String
   name      String
-  relation  String   // parent, sibling, friend, other
+  relation  String // parent, sibling, friend, other
   phone     String
   isPrimary Boolean  @default(false)
   createdAt DateTime @default(now())
@@ -222,34 +247,65 @@ model StudentContact {
 // ==================== ENROLLMENT ====================
 
 model Enrollment {
-  id          String   @id @default(uuid())
-  studentId   String
-  courseId    String
-  classId     String?
-  enrolledAt  DateTime @default(now())
-  startDate   DateTime?
-  endDate     DateTime?
-  status      String   // enrolled, studying, completed, dropped, reserved
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String    @id @default(uuid())
+  code       String?   @unique // GD0001... (mã ghi danh)
+  studentId  String
+  courseId   String
+  classId    String?
+  enrolledAt DateTime  @default(now())
+  startDate  DateTime?
+  endDate    DateTime?
+  status     String // reserved(Giữ chỗ), studying(Đang học), suspended(Bảo lưu), dropped(Nghỉ), completed(Hoàn thành)
 
-  student     Student @relation(fields: [studentId], references: [id])
-  course      Course  @relation(fields: [courseId], references: [id])
-  class       Class?  @relation(fields: [classId], references: [id])
+  // ---- pricing snapshot (chốt lúc ghi danh, không đổi khi sĩ số lớp đổi) ----
+  classType      String? // group, one_on_one — snapshot from class
+  priceTier      String? // "2-5" | "6-10" for group; locked at enrollment
+  billingType    String? // block (group) | monthly (1-1)
+  totalHours     Float? // số giờ khóa theo hình thức
+  unitPrice      Float? // đơn giá/giờ đã chốt
+  grossFee       Float   @default(0) // học phí gốc = totalHours × unitPrice
+  discountDetail String? // JSON [{type:'full_course'|'relative'|'ctv'|'promo', pct, note}]
+  discountPct    Float   @default(0) // tổng % giảm (trần 20%)
+  finalFee       Float   @default(0) // học phí sau giảm
+  depositApplied Float   @default(0) // cọc đã trừ vào học phí
+  monthlyHours   Float? // lớp 1-1: số giờ đăng ký trong tháng
+  revenuePerHour Float? // finalFee / totalHours — dùng cho lương GV lớp nhóm
+
+  // ---- sales & commission ----
+  saleId1  String? // sale phụ trách chính
+  saleId2  String? // sale thứ 2 (chia đều HH)
+  leadType String? // center (5%) | self_sourced (10%) | ctv
+  ctvType  String? // none | ctv_enrolled | ctv_not_enrolled
+  ctvName  String? // tên CTV giới thiệu (nếu có)
+
+  // ---- bảo lưu ----
+  suspendDate  DateTime?
+  suspendUntil DateTime? // suspendDate + THAM_SO.thời_hạn_bảo_lưu (3 tháng)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student     Student           @relation(fields: [studentId], references: [id])
+  course      Course            @relation(fields: [courseId], references: [id])
+  class       Class?            @relation(fields: [classId], references: [id])
+  sale1       User?             @relation("EnrollmentSale1", fields: [saleId1], references: [id])
+  sale2       User?             @relation("EnrollmentSale2", fields: [saleId2], references: [id])
   events      EnrollmentEvent[]
+  receivables Receivable[]
+  commissions Commission[]
 
   @@map("enrollments")
 }
 
 model EnrollmentEvent {
-  id          String   @id @default(uuid())
-  enrollmentId String
-  type        String   // enroll, assign_class, transfer, reserve, resume, drop, complete
+  id            String   @id @default(uuid())
+  enrollmentId  String
+  type          String // enroll, assign_class, transfer, reserve, resume, drop, complete
   effectiveDate DateTime
-  reason      String?
-  approvedBy  String?
-  createdAt   DateTime @default(now())
-  createdBy   String
+  reason        String?
+  approvedBy    String?
+  createdAt     DateTime @default(now())
+  createdBy     String
 
   enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
 
@@ -259,21 +315,31 @@ model EnrollmentEvent {
 // ==================== ACADEMIC ====================
 
 model Course {
-  id          String   @id @default(uuid())
-  code        String   @unique
-  name        String
-  level       String   // N5, N4, N3, N2, N1, etc
-  textbook    String?
-  goal        String?
-  totalSessions Int?
-  totalHours  Int?
-  standardFee Float?
-  content     String?
-  testSchedule String?
+  id                 String   @id @default(uuid())
+  code               String   @unique // NM, NT54, NT3, NT2, LT54, LT3, LT2, BJT-NT, BJT-LT
+  name               String
+  level              String // N5, N4, N3, N2, N1, etc
+  courseGroup        String? // nhap_mon, nen_tang, luyen_thi, bjt
+  priceLevel         String? // N5-N4, N3, N2, BJT — drives teacher group payroll + rate table
+  textbook           String?
+  goal               String?
+  totalSessions      Int?
+  totalHours         Int?
+  standardFee        Float?
+  // spec KHOA_HOC: hours differ between 1-1 and group
+  hoursOneOnOne      Float? // total hours for 1-1 format
+  hoursGroup         Float? // total hours for group format
+  blockHours         Float? // billing block size (group): 50 nền tảng / 20 luyện thi / 30 BJT / 20 NM
+  priceOneOnOne      Float? // VND per hour, 1-1
+  priceGroup2to5     Float? // VND per hour per student, group 2-5
+  priceGroup6to10    Float? // VND per hour per student, group 6-10
+  pdfPrice           Float? // giáo trình PDF (admin cấu hình)
+  content            String?
+  testSchedule       String?
   completionStandard String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   classes     Class[]
   enrollments Enrollment[]
@@ -283,42 +349,50 @@ model Course {
 }
 
 model Class {
-  id            String   @id @default(uuid())
-  code          String   @unique
-  courseId      String
-  format        String   // online
-  startDate     DateTime
-  endDate       DateTime
-  maxStudents   Int?
-  currentStudents Int    @default(0)
-  studyingStudents Int   @default(0)
-  waitingList   Int      @default(0)
-  mainTeacherId String?
-  supportTeacherId String?
-  schedule      String?  // JSON or text schedule
-  meetingLink   String?
-  content       String?
-  status        String   // planned, recruiting, full, studying, paused, finished
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id               String   @id @default(uuid())
+  code             String   @unique // group: LN54-01... | 1-1: L11-01... (mỗi HV 1 mã)
+  courseId         String
+  name             String? // display name, e.g. "Nền tảng N5-N4 khóa 01"
+  classType        String   @default("group") // group (2-10 HV), one_on_one (rolling)
+  format           String   @default("online")
+  shift            String? // morning(8-11), afternoon(14-16), evening(19-21)
+  shiftTime        String? // display "19g-21g"
+  startDate        DateTime
+  endDate          DateTime
+  minStudents      Int      @default(2) // group opens at >=2 (THAM_SO)
+  maxStudents      Int? // group max 10
+  currentStudents  Int      @default(0)
+  studyingStudents Int      @default(0)
+  waitingList      Int      @default(0)
+  mainTeacherId    String? // GV chính 1
+  supportTeacherId String? // GV chính 2 (spec: 2 GV chính, không trợ giảng)
+  schedule         String? // fixed weekly (T2-4-6) or flexible per-session (1-1)
+  meetingLink      String?
+  driveLink        String? // Google Drive tài liệu của lớp (HV portal tải)
+  videoLink        String? // link video buổi học (học bù lớp nhóm)
+  content          String?
+  status           String // planned, recruiting, full, studying, paused, finished
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  course        Course   @relation(fields: [courseId], references: [id])
-  mainTeacher   Teacher? @relation("ClassMainTeacher", fields: [mainTeacherId], references: [id])
-  supportTeacher Teacher? @relation("ClassSupportTeacher", fields: [supportTeacherId], references: [id])
-  enrollments   Enrollment[]
-  classMembers  ClassMember[]
-  sessions      Session[]
+  course         Course               @relation(fields: [courseId], references: [id])
+  mainTeacher    Teacher?             @relation("ClassMainTeacher", fields: [mainTeacherId], references: [id])
+  supportTeacher Teacher?             @relation("ClassSupportTeacher", fields: [supportTeacherId], references: [id])
+  enrollments    Enrollment[]
+  classMembers   ClassMember[]
+  sessions       Session[]
+  payrollItems   TeacherPayrollItem[]
 
   @@map("classes")
 }
 
 model ClassMember {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   classId   String
   studentId String
-  joinedAt  DateTime @default(now())
+  joinedAt  DateTime  @default(now())
   leftAt    DateTime?
-  status    String   // active, transferred, dropped
+  status    String // active, transferred, dropped
 
   class   Class   @relation(fields: [classId], references: [id])
   student Student @relation(fields: [studentId], references: [id])
@@ -327,28 +401,28 @@ model ClassMember {
 }
 
 model Session {
-  id            String   @id @default(uuid())
-  classId       String
-  date          DateTime
-  startTime     String   // HH:mm
-  endTime       String   // HH:mm
-  teacherId     String
-  meetingLink   String?
-  plannedContent String?
-  actualContent String?
-  homework      String?
-  notes         String?
-  status        String   // planned, taught, absent, makeup, rescheduled, teacher_changed
+  id              String   @id @default(uuid())
+  classId         String
+  date            DateTime
+  startTime       String // HH:mm
+  endTime         String // HH:mm
+  teacherId       String
+  meetingLink     String?
+  plannedContent  String?
+  actualContent   String?
+  homework        String?
+  notes           String?
+  status          String // planned, taught, absent, makeup, rescheduled, teacher_changed
   calculatedHours Float?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  class         Class    @relation(fields: [classId], references: [id])
-  teacher       Teacher  @relation(fields: [teacherId], references: [id])
-  attendances   Attendance[]
-  changes       SessionChange[]
-  progress      LearningProgress[]
-  payrollItems  TeacherPayrollItem[]
+  class        Class                @relation(fields: [classId], references: [id])
+  teacher      Teacher              @relation(fields: [teacherId], references: [id])
+  attendances  Attendance[]
+  changes      SessionChange[]
+  progress     LearningProgress[]
+  payrollItems TeacherPayrollItem[]
 
   @@map("sessions")
 }
@@ -356,7 +430,7 @@ model Session {
 model SessionChange {
   id        String   @id @default(uuid())
   sessionId String
-  type      String   // absent, makeup, rescheduled, teacher_changed
+  type      String // absent, makeup, rescheduled, teacher_changed
   oldValue  String?
   newValue  String?
   reason    String?
@@ -369,13 +443,17 @@ model SessionChange {
 }
 
 model Attendance {
-  id        String   @id @default(uuid())
-  sessionId String
-  studentId String
-  status    String   // present, excused_absent, unexcused_absent, late, early_leave
-  notes     String?
-  createdAt DateTime @default(now())
-  createdBy String
+  id                  String   @id @default(uuid())
+  sessionId           String
+  studentId           String
+  status              String // present, late, excused_absent(có phép), unexcused_absent(không phép), early_leave
+  reportedBeforeHours Float? // báo nghỉ trước bao nhiêu giờ (>=24h = có phép)
+  excusedCountInMonth Int? // snapshot: lần nghỉ phép thứ mấy trong tháng dương lịch
+  countsAsAttended    Boolean  @default(true) // báo <24h hoặc quá 2 lần/tháng → vẫn tính 1 buổi
+  makeupDirection     String? // makeup_other_class, watch_video (nhóm) | private_session (1-1)
+  notes               String?
+  createdAt           DateTime @default(now())
+  createdBy           String
 
   session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   student Student @relation(fields: [studentId], references: [id])
@@ -384,18 +462,18 @@ model Attendance {
 }
 
 model LearningProgress {
-  id          String   @id @default(uuid())
-  sessionId   String
-  studentId   String
-  content     String?
-  actualContent String?
-  homework    String?
-  completionRate Int?    // percentage
-  testScore   Float?
-  teacherComment String?
+  id              String   @id @default(uuid())
+  sessionId       String
+  studentId       String
+  content         String?
+  actualContent   String?
+  homework        String?
+  completionRate  Int? // percentage
+  testScore       Float?
+  teacherComment  String?
   skillsToImprove String?
-  createdAt   DateTime @default(now())
-  createdBy   String
+  createdAt       DateTime @default(now())
+  createdBy       String
 
   session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   student Student @relation(fields: [studentId], references: [id])
@@ -404,16 +482,21 @@ model LearningProgress {
 }
 
 model Assessment {
-  id        String   @id @default(uuid())
-  studentId String
-  type      String   // quiz, midterm, final, jlpt_mock
-  date      DateTime
-  score     Float?
-  maxScore  Float?
-  grade     String?
-  notes     String?
-  createdAt DateTime @default(now())
-  createdBy String
+  id            String   @id @default(uuid())
+  studentId     String
+  enrollmentId  String? // lượt ghi danh liên quan (lớp/khóa)
+  type          String // quizizz, midterm(giữa khóa), final(cuối khóa), jlpt_real(thi thật)
+  date          DateTime
+  score         Float?
+  maxScore      Float?
+  percent       Float? // score/maxScore
+  passed        Boolean? // theo ngưỡng THAM_SO (khởi tạo 60%)
+  jlptResult    String? // Đậu/Rớt — kết quả JLPT thực tế
+  grade         String?
+  notes         String?
+  sentToStudent Boolean  @default(false) // đã gửi kết quả cho HV
+  createdAt     DateTime @default(now())
+  createdBy     String
 
   student Student @relation(fields: [studentId], references: [id])
 
@@ -421,13 +504,13 @@ model Assessment {
 }
 
 model AcademicWarning {
-  id        String   @id @default(uuid())
-  studentId String
-  type      String   // consecutive_absent, low_attendance, below_standard, no_homework, dropout_risk
-  status    String   // new, processing, contacted, resolved, closed
-  details   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String    @id @default(uuid())
+  studentId  String
+  type       String // consecutive_absent, low_attendance, below_standard, no_homework, dropout_risk
+  status     String // new, processing, contacted, resolved, closed
+  details    String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
   resolvedAt DateTime?
   resolvedBy String?
 
@@ -439,37 +522,39 @@ model AcademicWarning {
 // ==================== TEACHER ====================
 
 model Teacher {
-  id        String   @id @default(uuid())
-  code      String   @unique
-  name      String
-  phone     String
-  email     String?
-  education String?
-  certificates String?
-  cooperationType String // fulltime, parttime, freelance
-  maxHoursPerWeek Int?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String   @id @default(uuid())
+  code             String   @unique
+  name             String
+  phone            String
+  email            String?
+  education        String?
+  certificates     String?
+  cooperationType  String // fulltime, parttime, freelance
+  employmentStatus String   @default("official") // probation(thử việc) | official(chính thức) — drives DON_GIA_GV
+  maxHoursPerWeek  Int?
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  availability TeacherAvailability[]
-  assignments  TeacherAssignment[]
-  rates        TeacherRate[]
+  availability   TeacherAvailability[]
+  assignments    TeacherAssignment[]
+  rates          TeacherRate[]
   payrollPeriods TeacherPayrollPeriod[]
-  classesMain  Class[] @relation("ClassMainTeacher")
-  classesSupport Class[] @relation("ClassSupportTeacher")
-  sessions     Session[]
+  classesMain    Class[]                @relation("ClassMainTeacher")
+  classesSupport Class[]                @relation("ClassSupportTeacher")
+  sessions       Session[]
+  userAccount    User?                  @relation("TeacherAccount")
 
   @@map("teachers")
 }
 
 model TeacherAvailability {
-  id        String   @id @default(uuid())
+  id        String  @id @default(uuid())
   teacherId String
-  dayOfWeek Int      // 0=Sunday, 1=Monday, etc
-  startTime String   // HH:mm
-  endTime   String   // HH:mm
-  isActive  Boolean  @default(true)
+  dayOfWeek Int // 0=Sunday, 1=Monday, etc
+  startTime String // HH:mm
+  endTime   String // HH:mm
+  isActive  Boolean @default(true)
 
   teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
@@ -481,7 +566,7 @@ model TeacherAssignment {
   teacherId String
   sessionId String?
   classId   String?
-  type      String   // assigned, actual, substitute, makeup, trial, cancelled
+  type      String // assigned, actual, substitute, makeup, trial, cancelled
   date      DateTime
   hours     Float
   notes     String?
@@ -493,56 +578,67 @@ model TeacherAssignment {
 }
 
 model TeacherRate {
-  id          String   @id @default(uuid())
-  teacherId   String
-  classType   String?  // online, offline, trial, etc
-  role        String   // main, support
-  rate        Float
-  effectiveFrom DateTime
-  effectiveTo   DateTime?
-  approvedBy  String?
-  createdAt   DateTime @default(now())
+  id               String    @id @default(uuid())
+  teacherId        String? // null = dòng đơn giá chung (bảng DON_GIA_GV)
+  level            String? // N5-N4, N3, N2, BJT — dùng cho đơn giá chung lớp 1-1
+  employmentStatus String? // probation | official — dùng cho đơn giá chung
+  classType        String? // online, offline, trial, etc
+  role             String    @default("main") // main, support
+  rate             Float
+  effectiveFrom    DateTime
+  effectiveTo      DateTime?
+  approvedBy       String?
+  createdAt        DateTime  @default(now())
 
-  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacher Teacher? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
   @@map("teacher_rates")
 }
 
 model TeacherPayrollPeriod {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   teacherId   String
   periodStart DateTime
   periodEnd   DateTime
-  status      String   @default("draft") // draft, confirmed, paid
-  totalHours  Float    @default(0)
-  totalAmount Float    @default(0)
+  periodType  String    @default("weekly") // weekly — chốt & trả Thứ 7 (Q21/Q29)
+  status      String    @default("draft") // draft, confirmed, paid
+  totalHours  Float     @default(0)
+  totalAmount Float     @default(0)
+  totalBonus  Float     @default(0)
   notes       String?
   confirmedBy String?
   confirmedAt DateTime?
   paidAt      DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacher Teacher              @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   items   TeacherPayrollItem[]
 
   @@map("teacher_payroll_periods")
 }
 
 model TeacherPayrollItem {
-  id          String   @id @default(uuid())
-  periodId    String
-  sessionId   String?
-  type        String   // regular, substitute, makeup, trial, cancelled, adjustment
-  date        DateTime
-  hours       Float
-  rate        Float
-  amount      Float
-  description String?
-  createdAt   DateTime @default(now())
+  id             String   @id @default(uuid())
+  periodId       String
+  sessionId      String?
+  classId        String?
+  type           String // teaching, substitute, makeup, bonus, adjustment
+  date           DateTime
+  hours          Float    @default(0)
+  rate           Float    @default(0)
+  // lớp nhóm: lương = ratio × revenuePerHour × hours
+  ratio          Float? // tỷ lệ snapshot (sàn 15% + 2%/HV vượt min)
+  revenuePerHour Float? // doanh thu ghi nhận/giờ của lớp (snapshot)
+  bonusType      String? // retention, jlpt_pass, referral
+  bonusAmount    Float    @default(0)
+  amount         Float    @default(0) // lương giảng + thưởng của dòng
+  description    String?
+  createdAt      DateTime @default(now())
 
   period  TeacherPayrollPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
   session Session?             @relation(fields: [sessionId], references: [id])
+  class   Class?               @relation(fields: [classId], references: [id])
 
   @@map("teacher_payroll_items")
 }
@@ -550,74 +646,176 @@ model TeacherPayrollItem {
 // ==================== FINANCE ====================
 
 model Receivable {
-  id          String   @id @default(uuid())
-  studentId   String
-  courseId    String
-  standardFee Float
-  discount    Float    @default(0)
-  scholarship Float    @default(0)
-  extraFee    Float    @default(0)
-  totalAmount Float
-  dueDate     DateTime?
-  status      String   // pending, partial, paid, overdue, cancelled
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String    @id @default(uuid())
+  studentId    String
+  courseId     String
+  enrollmentId String? // link về lượt ghi danh
+  standardFee  Float
+  discount     Float     @default(0)
+  scholarship  Float     @default(0)
+  extraFee     Float     @default(0)
+  totalAmount  Float
+  periodType   String? // full, block, monthly, deposit, material, makeup
+  periodLabel  String? // "Block 1 (50 giờ)", "Tháng 9/2026", "Cọc giữ chỗ"
+  dueDate      DateTime?
+  status       String // pending, partial, paid, overdue, cancelled
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  student Student @relation(fields: [studentId], references: [id])
-  course  Course  @relation(fields: [courseId], references: [id])
-  payments Payment[]
+  student     Student             @relation(fields: [studentId], references: [id])
+  course      Course              @relation(fields: [courseId], references: [id])
+  enrollment  Enrollment?         @relation(fields: [enrollmentId], references: [id])
+  payments    Payment[]
   adjustments PaymentAdjustment[]
 
   @@map("receivables")
 }
 
 model Payment {
-  id          String   @id @default(uuid())
-  receivableId String
-  code        String   @unique
-  amount      Float
-  paymentDate DateTime @default(now())
-  method      String   // cash, bank_transfer, card, other
-  reference   String?
-  receipt     String?
-  status      String   // pending, confirmed, cancelled
-  confirmedBy String?
-  confirmedAt DateTime?
-  createdAt   DateTime @default(now())
-  createdBy   String
+  id            String    @id @default(uuid())
+  receivableId  String
+  code          String    @unique // PT0001... — tự tăng, không tái sử dụng khi xóa
+  receiptNo     Int?      @unique // sequence for PT numbering
+  amount        Float
+  itemType      String    @default("tuition") // deposit, tuition, pdf_material, makeup_hours, other
+  content       String? // nội dung: tháng/block/đợt
+  paymentDate   DateTime  @default(now())
+  method        String // bank_transfer, cash, e_wallet
+  reference     String?
+  receipt       String?
+  status        String // pending, confirmed, cancelled
+  collectorId   String? // người thu (User)
+  sentToStudent Boolean   @default(false) // đã gửi phiếu cho HV
+  confirmedBy   String?
+  confirmedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  createdBy     String
 
   receivable Receivable @relation(fields: [receivableId], references: [id])
+  collector  User?      @relation("PaymentCollector", fields: [collectorId], references: [id])
 
   @@map("payments")
 }
 
 model PaymentAdjustment {
-  id          String   @id @default(uuid())
+  id           String   @id @default(uuid())
   receivableId String
-  type        String   // refund, transfer, reserve, exemption, correction
-  amount      Float
-  reason      String
-  approvedBy  String?
-  status      String   // pending, approved, rejected
-  createdAt   DateTime @default(now())
-  createdBy   String
+  type         String // refund, transfer, reserve, exemption, correction
+  amount       Float
+  reason       String
+  approvedBy   String?
+  status       String // pending, approved, rejected
+  createdAt    DateTime @default(now())
+  createdBy    String
 
   receivable Receivable @relation(fields: [receivableId], references: [id])
 
   @@map("payment_adjustments")
 }
 
+// ==================== COMMISSION (hoa hồng sale & CTV) ====================
+
+model Commission {
+  id           String    @id @default(uuid())
+  enrollmentId String
+  userId       String? // sale nhận HH; null nếu là CTV ngoài hệ thống
+  ctvName      String? // tên CTV (khi CTV không phải user)
+  type         String // center_lead(5%) | self_sourced(10%) | ctv_referral(5%)
+  baseAmount   Float // số tiền làm căn cứ (học phí sau giảm / học phí tháng đầu 1-1)
+  pct          Float // 0.05 | 0.10
+  amount       Float // HH thực nhận (đã chia nếu 2 sale)
+  status       String    @default("pending") // pending(chưa đủ đk) | eligible(đủ chi) | paid | clawed_back
+  eligibleAt   DateTime? // khi HV đóng đủ 100% (hoặc thu tháng đầu cho 1-1)
+  paidAt       DateTime?
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  user       User?      @relation(fields: [userId], references: [id])
+
+  @@map("commissions")
+}
+
+// ==================== DUYỆT 2 CẤP ====================
+
+model Approval {
+  id          String    @id @default(uuid())
+  type        String // promotion(chương trình ưu đãi) | data_delete(xóa data) | special_discount(ghi nợ/giảm giá đặc biệt)
+  title       String
+  detail      String? // nội dung đề xuất
+  payload     Json? // entity ref + params to execute
+  status      String    @default("pending") // pending | level1_approved | approved | rejected | executed | cancelled
+  requestedBy String
+  level1By    String? // Trưởng phòng sale
+  level1At    DateTime?
+  level1Note  String?
+  level2By    String? // Giám đốc/Admin
+  level2At    DateTime?
+  level2Note  String?
+  executedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  requester User @relation(fields: [requestedBy], references: [id])
+
+  @@map("approvals")
+}
+
+// ==================== CHAT (GV ↔ HV, nhân viên ↔ HV) ====================
+
+model Conversation {
+  id        String   @id @default(uuid())
+  title     String? // nhóm hoặc null cho 1-1
+  isGroup   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  id             String    @id @default(uuid())
+  conversationId String
+  userId         String
+  lastReadAt     DateTime?
+  joinedAt       DateTime  @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@map("conversation_participants")
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  conversationId String
+  senderId       String
+  content        String
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id])
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
+}
+
 // ==================== SYSTEM ====================
 
 model Notification {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   userId    String
   title     String
   content   String
-  type      String   // lead_reminder, followup_overdue, class_starting, debt_due, warning, etc
-  isRead    Boolean  @default(false)
+  type      String // lead_reminder, followup_overdue, class_starting, debt_due, warning, etc
+  isRead    Boolean   @default(false)
   readAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -625,16 +823,16 @@ model Notification {
 }
 
 model Attachment {
-  id        String   @id @default(uuid())
-  studentId String?
-  entityType String  // student, lead, payment, etc
+  id         String   @id @default(uuid())
+  studentId  String?
+  entityType String // student, lead, payment, etc
   entityId   String
-  fileName  String
-  filePath  String
-  fileType  String
-  fileSize  Int
+  fileName   String
+  filePath   String
+  fileType   String
+  fileSize   Int
   uploadedBy String
-  createdAt DateTime @default(now())
+  createdAt  DateTime @default(now())
 
   student Student? @relation(fields: [studentId], references: [id])
 
@@ -644,8 +842,8 @@ model Attachment {
 model AuditLog {
   id        String   @id @default(uuid())
   userId    String
-  action    String   // create, update, delete, view
-  entity    String   // student, lead, payment, etc
+  action    String // create, update, delete, view
+  entity    String // student, lead, payment, etc
   entityId  String
   oldValue  Json?
   newValue  Json?
@@ -658,26 +856,27 @@ model AuditLog {
 }
 
 model StatusDefinition {
-  id        String   @id @default(uuid())
-  module    String   // lead, student, class, session, payment, warning
-  status    String
+  id          String   @id @default(uuid())
+  module      String // lead, student, class, session, payment, warning
+  status      String
   displayName String
-  color     String?
-  isActive  Boolean  @default(true)
-  isSystem  Boolean  @default(false) // cannot delete if used
-  sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
+  color       String?
+  isActive    Boolean  @default(true)
+  isSystem    Boolean  @default(false) // cannot delete if used
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
 
+  @@unique([module, status])
   @@map("status_definitions")
 }
 
 model Setting {
-  id        String   @id @default(uuid())
-  key       String   @unique
-  value     String
-  type      String   // string, number, boolean, json
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  type        String // string, number, boolean, json
   description String?
-  updatedAt DateTime @updatedAt
+  updatedAt   DateTime @updatedAt
 
   @@map("settings")
 }

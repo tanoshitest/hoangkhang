@@ -69,7 +69,7 @@ router.post('/leads/preview', requirePermission('leads', 'write'), async (req: A
 
       let duplicate = false;
       if (phone) {
-        const existing = await prisma.lead.findUnique({ where: { phone } });
+        const existing = await prisma.lead.findFirst({ where: { phone } });
         if (existing) {
           duplicate = true;
           errors.push(`Trùng với lead ${existing.code}`);
@@ -123,7 +123,7 @@ router.post('/leads/commit', requirePermission('leads', 'write'), async (req: Au
         continue;
       }
 
-      const existing = await prisma.lead.findUnique({ where: { phone } });
+      const existing = await prisma.lead.findFirst({ where: { phone } });
       if (existing) {
         results.skipped++;
         continue;

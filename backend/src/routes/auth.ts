@@ -37,7 +37,7 @@ router.post('/login', async (req: Request, res: Response) => {
       },
     });
 
-    if (!user || !user.isActive) {
+    if (!user || !user.isActive || !user.password) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
