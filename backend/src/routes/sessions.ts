@@ -241,122 +241,140 @@ router.put('/:id', requirePermission('sessions', 'write'), async (req: Authentic
 // POST /api/sessions/:id/attendance - Bulk save attendance with nghiệp vụ rules
 // Rules (THAM_SO): báo nghỉ ≥24h + ≤2 lần/tháng = có phép (không tính buổi);
 // báo <24h / quá 2 lần / không báo = vẫn tính 1 buổi. Vắng cộng dồn ≥2 → cảnh báo.
+// Logic điểm danh dùng chung cho staff route + portal GV (scoped check ở caller)
+export interface AttendanceInput {
+  studentId: string;
+  status: string;
+  notes?: string;
+  reportedBeforeHours?: number;
+  makeupDirection?: string;
+}
+
+export type SaveAttendanceResult =
+  | { error: string; statusCode: number }
+  | { saved: number; attendances: any[]; warningsCreated: number };
+
+export async function saveAttendanceForSession(id: string, attendances: AttendanceInput[], userId: string): Promise<SaveAttendanceResult> {
+  const session = await prisma.session.findUnique({
+    where: { id },
+    include: { class: { select: { classType: true, code: true } } },
+  });
+  if (!session) {
+    return { error: 'Session not found', statusCode: 404 };
+  }
+
+  const noticeHours = await getNum('absence_notice_hours', 24);
+  const maxExcused = await getNum('excused_absence_per_month', 2);
+  const warnAfter = await getNum('absence_warning_count', 2);
+  const isGroup = session.class?.classType !== 'one_on_one';
+
+  const monthStart = new Date(session.date.getFullYear(), session.date.getMonth(), 1);
+  const monthEnd = new Date(session.date.getFullYear(), session.date.getMonth() + 1, 1);
+
+  const results = [];
+  for (const a of attendances) {
+    const isAbsent = a.status === 'excused_absent' || a.status === 'unexcused_absent';
+    let reportedBeforeHours: number | null = null;
+    let excusedCountInMonth: number | null = null;
+    let countsAsAttended = a.status === 'present' || a.status === 'late' || a.status === 'early_leave';
+    let makeupDirection: string | null = null;
+
+    if (isAbsent) {
+      reportedBeforeHours = a.reportedBeforeHours ?? null;
+      // Đếm số lần nghỉ phép trong tháng dương lịch của buổi này
+      const excusedCount = await prisma.attendance.count({
+        where: {
+          studentId: a.studentId,
+          status: 'excused_absent',
+          session: { date: { gte: monthStart, lt: monthEnd }, id: { not: id } },
+        },
+      });
+      excusedCountInMonth = excusedCount + 1;
+
+      const reportedEnough = reportedBeforeHours !== null && reportedBeforeHours >= noticeHours;
+      if (a.status === 'excused_absent' && reportedEnough && excusedCountInMonth <= maxExcused) {
+        countsAsAttended = false; // nghỉ có phép hợp lệ → không tính buổi
+      } else {
+        countsAsAttended = true; // báo <24h / quá 2 lần / không phép → vẫn tính 1 buổi
+      }
+      makeupDirection = a.makeupDirection ||
+        (isGroup ? 'watch_video' : 'private_session');
+    }
+
+    const data = {
+      status: a.status,
+      notes: a.notes || null,
+      reportedBeforeHours,
+      excusedCountInMonth,
+      countsAsAttended,
+      makeupDirection,
+    };
+
+    const existing = await prisma.attendance.findFirst({
+      where: { sessionId: id, studentId: a.studentId },
+    });
+    const record = existing
+      ? await prisma.attendance.update({ where: { id: existing.id }, data })
+      : await prisma.attendance.create({
+          data: { ...data, sessionId: id, studentId: a.studentId, createdBy: userId },
+        });
+    results.push(record);
+  }
+
+  // Cảnh báo vắng cộng dồn: HV có ≥N buổi vắng (kể cả có phép) trong lớp này
+  const warned: string[] = [];
+  for (const a of attendances) {
+    if (a.status !== 'excused_absent' && a.status !== 'unexcused_absent') continue;
+    const totalAbsent = await prisma.attendance.count({
+      where: {
+        studentId: a.studentId,
+        status: { in: ['excused_absent', 'unexcused_absent'] },
+        session: { classId: session.classId },
+      },
+    });
+    if (totalAbsent >= warnAfter) {
+      const existingWarning = await prisma.academicWarning.findFirst({
+        where: {
+          studentId: a.studentId,
+          type: 'consecutive_absent',
+          status: { in: ['new', 'processing', 'contacted'] },
+        },
+      });
+      if (!existingWarning) {
+        await prisma.academicWarning.create({
+          data: {
+            studentId: a.studentId,
+            type: 'consecutive_absent',
+            status: 'new',
+            details: `Vắng ${totalAbsent} buổi cộng dồn ở lớp ${session.class?.code || ''} (ngưỡng cảnh báo: ${warnAfter})`,
+          },
+        });
+        warned.push(a.studentId);
+      }
+    }
+  }
+
+  await auditLog(userId, 'attendance_save', 'Session', id, undefined, {
+    classCode: session.class?.code,
+    records: results.length,
+    absents: results.filter(r => ['excused_absent', 'unexcused_absent'].includes(r.status)).length,
+    warningsCreated: warned.length,
+  });
+
+  return { saved: results.length, attendances: results, warningsCreated: warned.length };
+}
+
 router.post('/:id/attendance', requirePermission('attendance', 'write'), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { id } = req.params;
     const { attendances } = req.body;
-
     if (!Array.isArray(attendances)) {
       return res.status(400).json({ error: 'attendances array required' });
     }
-
-    const session = await prisma.session.findUnique({
-      where: { id },
-      include: { class: { select: { classType: true, code: true } } },
-    });
-    if (!session) {
-      return res.status(404).json({ error: 'Session not found' });
+    const result = await saveAttendanceForSession(req.params.id, attendances, req.user!.id);
+    if ('error' in result) {
+      return res.status(result.statusCode).json({ error: result.error });
     }
-
-    const noticeHours = await getNum('absence_notice_hours', 24);
-    const maxExcused = await getNum('excused_absence_per_month', 2);
-    const warnAfter = await getNum('absence_warning_count', 2);
-    const isGroup = session.class?.classType !== 'one_on_one';
-
-    const monthStart = new Date(session.date.getFullYear(), session.date.getMonth(), 1);
-    const monthEnd = new Date(session.date.getFullYear(), session.date.getMonth() + 1, 1);
-
-    const results = [];
-    for (const a of attendances as { studentId: string; status: string; notes?: string; reportedBeforeHours?: number; makeupDirection?: string }[]) {
-      const isAbsent = a.status === 'excused_absent' || a.status === 'unexcused_absent';
-      let reportedBeforeHours: number | null = null;
-      let excusedCountInMonth: number | null = null;
-      let countsAsAttended = a.status === 'present' || a.status === 'late' || a.status === 'early_leave';
-      let makeupDirection: string | null = null;
-
-      if (isAbsent) {
-        reportedBeforeHours = a.reportedBeforeHours ?? null;
-        // Đếm số lần nghỉ phép trong tháng dương lịch của buổi này
-        const excusedCount = await prisma.attendance.count({
-          where: {
-            studentId: a.studentId,
-            status: 'excused_absent',
-            session: { date: { gte: monthStart, lt: monthEnd }, id: { not: id } },
-          },
-        });
-        excusedCountInMonth = excusedCount + 1;
-
-        const reportedEnough = reportedBeforeHours !== null && reportedBeforeHours >= noticeHours;
-        if (a.status === 'excused_absent' && reportedEnough && excusedCountInMonth <= maxExcused) {
-          countsAsAttended = false; // nghỉ có phép hợp lệ → không tính buổi
-        } else {
-          countsAsAttended = true; // báo <24h / quá 2 lần / không phép → vẫn tính 1 buổi
-        }
-        makeupDirection = a.makeupDirection ||
-          (isGroup ? 'watch_video' : 'private_session');
-      }
-
-      const data = {
-        status: a.status,
-        notes: a.notes || null,
-        reportedBeforeHours,
-        excusedCountInMonth,
-        countsAsAttended,
-        makeupDirection,
-      };
-
-      const existing = await prisma.attendance.findFirst({
-        where: { sessionId: id, studentId: a.studentId },
-      });
-      const record = existing
-        ? await prisma.attendance.update({ where: { id: existing.id }, data })
-        : await prisma.attendance.create({
-            data: { ...data, sessionId: id, studentId: a.studentId, createdBy: req.user?.id || 'system' },
-          });
-      results.push(record);
-    }
-
-    // Cảnh báo vắng cộng dồn: HV có ≥N buổi vắng (kể cả có phép) trong lớp này
-    const warned: string[] = [];
-    for (const a of attendances as { studentId: string; status: string }[]) {
-      if (a.status !== 'excused_absent' && a.status !== 'unexcused_absent') continue;
-      const totalAbsent = await prisma.attendance.count({
-        where: {
-          studentId: a.studentId,
-          status: { in: ['excused_absent', 'unexcused_absent'] },
-          session: { classId: session.classId },
-        },
-      });
-      if (totalAbsent >= warnAfter) {
-        const existingWarning = await prisma.academicWarning.findFirst({
-          where: {
-            studentId: a.studentId,
-            type: 'consecutive_absent',
-            status: { in: ['new', 'processing', 'contacted'] },
-          },
-        });
-        if (!existingWarning) {
-          await prisma.academicWarning.create({
-            data: {
-              studentId: a.studentId,
-              type: 'consecutive_absent',
-              status: 'new',
-              details: `Vắng ${totalAbsent} buổi cộng dồn ở lớp ${session.class?.code || ''} (ngưỡng cảnh báo: ${warnAfter})`,
-            },
-          });
-          warned.push(a.studentId);
-        }
-      }
-    }
-
-    await auditLog(req.user!.id, 'attendance_save', 'Session', id, undefined, {
-      classCode: session.class?.code,
-      records: results.length,
-      absents: results.filter(r => ['excused_absent', 'unexcused_absent'].includes(r.status)).length,
-      warningsCreated: warned.length,
-    });
-
-    res.json({ saved: results.length, attendances: results, warningsCreated: warned.length });
+    res.json(result);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to save attendance' });

@@ -30,7 +30,10 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   ],
   teacher: [
     'students:assigned', 'classes:assigned', 'sessions:assigned',
-    'attendance:write', 'reports:assigned'
+    'attendance:write', 'reports:assigned', 'chat:use'
+  ],
+  student: [
+    'chat:use'
   ],
   accountant: [
     'leads:read', 'students:read', 'classes:read', 'finance:*',

@@ -22,6 +22,8 @@ import reportRoutes from './routes/reports';
 import notificationRoutes from './routes/notifications';
 import adminRoutes from './routes/admin';
 import importRoutes from './routes/import';
+import portalRoutes from './routes/portal';
+import chatRoutes from './routes/chat';
 import { authenticateToken } from './middleware/auth';
 import { errorHandler } from './middleware/errorHandler';
 
@@ -60,6 +62,8 @@ app.use('/api/reports', authenticateToken, reportRoutes);
 app.use('/api/notifications', authenticateToken, notificationRoutes);
 app.use('/api/admin', authenticateToken, adminRoutes);
 app.use('/api/import', authenticateToken, importRoutes);
+app.use('/api/portal', authenticateToken, portalRoutes);
+app.use('/api/chat', authenticateToken, chatRoutes);
 
 // Error handling
 app.use(errorHandler);

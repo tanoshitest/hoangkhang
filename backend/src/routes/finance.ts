@@ -440,48 +440,55 @@ router.post('/payments/:id/cancel', requirePermission('finance', 'write'), async
   }
 });
 
+// Xuất PDF phiếu thu — dùng chung cho finance route + portal HV (ownership check ở caller)
+export async function streamReceiptPdf(paymentId: string, res: Response): Promise<boolean> {
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    include: {
+      collector: { select: { name: true } },
+      receivable: {
+        include: {
+          student: { select: { code: true, name: true, phone: true } },
+          course: { select: { name: true } },
+          enrollment: { include: { class: { select: { code: true } } } },
+        },
+      },
+    },
+  });
+  if (!payment) return false;
+
+  const orgName = await getSetting('org_name', 'TRUNG TÂM NHẬT NGỮ HOÀNG KHANG');
+  const orgSub = await getSetting('org_subtitle', '');
+
+  const doc = buildReceiptPdf(
+    {
+      receiptCode: payment.code,
+      paymentDate: payment.paymentDate,
+      studentName: payment.receivable.student.name,
+      studentCode: payment.receivable.student.code,
+      studentPhone: payment.receivable.student.phone,
+      courseName: payment.receivable.course?.name,
+      classCode: payment.receivable.enrollment?.class?.code,
+      itemType: payment.itemType,
+      content: payment.content,
+      amount: payment.amount,
+      method: payment.method,
+      collectorName: payment.collector?.name,
+    },
+    { name: orgName, sub: orgSub || undefined }
+  );
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `inline; filename="${payment.code}.pdf"`);
+  doc.pipe(res);
+  return true;
+}
+
 // GET /api/finance/payments/:id/receipt.pdf - In phiếu thu (PDF, font tiếng Việt)
 router.get('/payments/:id/receipt.pdf', requirePermission('finance', 'read'), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const payment = await prisma.payment.findUnique({
-      where: { id: req.params.id },
-      include: {
-        collector: { select: { name: true } },
-        receivable: {
-          include: {
-            student: { select: { code: true, name: true, phone: true } },
-            course: { select: { name: true } },
-            enrollment: { include: { class: { select: { code: true } } } },
-          },
-        },
-      },
-    });
-    if (!payment) return res.status(404).json({ error: 'Payment not found' });
-
-    const orgName = await getSetting('org_name', 'TRUNG TÂM NHẬT NGỮ HOÀNG KHANG');
-    const orgSub = await getSetting('org_subtitle', '');
-
-    const doc = buildReceiptPdf(
-      {
-        receiptCode: payment.code,
-        paymentDate: payment.paymentDate,
-        studentName: payment.receivable.student.name,
-        studentCode: payment.receivable.student.code,
-        studentPhone: payment.receivable.student.phone,
-        courseName: payment.receivable.course?.name,
-        classCode: payment.receivable.enrollment?.class?.code,
-        itemType: payment.itemType,
-        content: payment.content,
-        amount: payment.amount,
-        method: payment.method,
-        collectorName: payment.collector?.name,
-      },
-      { name: orgName, sub: orgSub || undefined }
-    );
-
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename="${payment.code}.pdf"`);
-    doc.pipe(res);
+    const ok = await streamReceiptPdf(req.params.id, res);
+    if (!ok) return res.status(404).json({ error: 'Payment not found' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to generate receipt' });

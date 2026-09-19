@@ -1,7 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+
+function destFor(user: { roles?: string[]; studentId?: string | null; teacherId?: string | null }) {
+  const roles = user.roles || [];
+  const staff = roles.some(r => ['admin', 'manager', 'sales', 'sales_leader', 'academic', 'accountant'].includes(r));
+  if (staff) return '/dashboard';
+  if (roles.includes('student')) return '/portal/student';
+  if (roles.includes('teacher')) return '/portal/teacher';
+  return '/dashboard';
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -9,6 +20,13 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const googleBtn = useRef<HTMLDivElement>(null);
+
+  const saveSession = (data: any) => {
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    router.push(destFor(data.user));
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,9 +45,7 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        router.push('/dashboard');
+        saveSession(data);
       } else {
         setError(data.error || 'Login failed');
       }
@@ -39,6 +55,41 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  // Nút đăng nhập Google (GIS) — chỉ render khi đã cấu hình Client ID
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID || !googleBtn.current) return;
+    const handleCredential = async (resp: { credential: string }) => {
+      setError('');
+      try {
+        const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/google`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken: resp.credential }),
+        });
+        const data = await r.json();
+        if (r.ok) saveSession(data);
+        else setError(data.error || 'Đăng nhập Google thất bại');
+      } catch {
+        setError('Network error');
+      }
+    };
+    const init = () => {
+      const g = (window as any).google;
+      if (!g?.accounts?.id || !googleBtn.current) return;
+      g.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleCredential });
+      g.accounts.id.renderButton(googleBtn.current, { theme: 'outline', size: 'large', width: 320, text: 'signin_with', locale: 'vi' });
+    };
+    if ((window as any).google?.accounts?.id) init();
+    else {
+      const s = document.createElement('script');
+      s.src = 'https://accounts.google.com/gsi/client';
+      s.async = true;
+      s.onload = init;
+      document.head.appendChild(s);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="min-h-dvh flex items-center justify-center bg-[#f6f8fb] py-12 px-4 sm:px-6 lg:px-8">
@@ -104,6 +155,20 @@ export default function LoginPage() {
             </button>
           </div>
         </form>
+
+        {GOOGLE_CLIENT_ID && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-slate-200" />
+              <span className="text-xs text-slate-400">hoặc</span>
+              <div className="h-px flex-1 bg-slate-200" />
+            </div>
+            <div ref={googleBtn} className="flex justify-center" />
+            <p className="text-center text-xs text-slate-400">
+              Học viên đăng nhập bằng tài khoản Google đã đăng ký với trung tâm
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

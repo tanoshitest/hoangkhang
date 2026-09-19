@@ -36,6 +36,8 @@ export const authenticateToken = async (req: AuthenticatedRequest, res: Response
       email: user.email,
       name: user.name,
       roles: user.roles.map((ur) => ur.role.name),
+      studentId: user.studentId,
+      teacherId: user.teacherId,
     };
 
     next();

@@ -7,6 +7,7 @@ import {
   LayoutDashboard, GraduationCap, BookOpen, Calendar, CreditCard,
   BarChart3, Settings, LogOut, Menu, X, Bell, AlertTriangle, Target,
   UserCheck, Wallet, Kanban, School, UserCog, ClipboardCheck, TrendingUp, HandCoins, LucideIcon,
+  MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -58,6 +59,7 @@ const NAV: NavGroup[] = [
   {
     title: 'Hệ thống',
     items: [
+      { href: '/chat', label: 'Tin nhắn', icon: MessageSquare },
       { href: '/approvals', label: 'Phê duyệt', icon: ClipboardCheck },
       { href: '/reports', label: 'Báo cáo', icon: BarChart3 },
       { href: '/notifications', label: 'Thông báo', icon: Bell },
@@ -66,10 +68,35 @@ const NAV: NavGroup[] = [
   },
 ];
 
+// Nav cho tài khoản portal (GV thuần / HV) — không thấy menu staff
+const PORTAL_NAV: Record<'student' | 'teacher', NavGroup[]> = {
+  student: [
+    {
+      items: [
+        { href: '/portal/student', label: 'Của tôi', icon: LayoutDashboard, match: ['/portal/student'] },
+        { href: '/chat', label: 'Tin nhắn', icon: MessageSquare },
+        { href: '/notifications', label: 'Thông báo', icon: Bell },
+      ],
+    },
+  ],
+  teacher: [
+    {
+      items: [
+        { href: '/portal/teacher', label: 'Lớp của tôi', icon: School, match: ['/portal/teacher'] },
+        { href: '/chat', label: 'Tin nhắn', icon: MessageSquare },
+        { href: '/notifications', label: 'Thông báo', icon: Bell },
+      ],
+    },
+  ],
+};
+
 const ROLE_LABELS: Record<string, string> = {
   admin: 'Quản trị viên', manager: 'Quản lý', sales: 'Tư vấn',
   academic: 'Đào tạo', teacher: 'Giáo viên', accountant: 'Kế toán',
+  student: 'Học viên', sales_leader: 'Trưởng phòng sale',
 };
+
+const STAFF_ROLES = ['admin', 'manager', 'sales', 'sales_leader', 'academic', 'accountant'];
 
 const BARE_PATHS = ['/login', '/'];
 const DESKTOP_MQ = '(min-width: 1024px)';
@@ -161,7 +188,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   const isAdmin = user.roles?.includes('admin');
-  const groups = NAV
+  const isStaff = user.roles?.some(r => STAFF_ROLES.includes(r));
+  const portalKind: 'student' | 'teacher' | null = !isStaff
+    ? (user.roles?.includes('student') ? 'student' : user.roles?.includes('teacher') ? 'teacher' : null)
+    : null;
+  const baseNav = portalKind ? PORTAL_NAV[portalKind] : NAV;
+  const groups = baseNav
     .map(g => ({ ...g, items: g.items.filter(i => !i.adminOnly || isAdmin) }))
     .filter(g => g.items.length > 0);
 

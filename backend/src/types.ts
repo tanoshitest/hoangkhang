@@ -5,6 +5,8 @@ export interface AuthUser {
   email: string;
   name: string;
   roles: string[];
+  studentId?: string | null;
+  teacherId?: string | null;
 }
 
 export interface AuthenticatedRequest extends Request {
