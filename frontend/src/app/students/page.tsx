@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, FileText } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/badge';
 import { Table, THead, TBody, TR, TH, TD, EmptyRow } from '@/components/ui/table';
@@ -66,8 +66,9 @@ export default function StudentsPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <Card className="overflow-hidden">
+    <div>
+      <div className="max-w-7xl mx-auto">
+        <Card className="overflow-hidden">
         <CardHeader className="flex-col items-start gap-3">
           <div className="flex w-full items-start justify-between gap-4">
             <div>
@@ -103,11 +104,12 @@ export default function StudentsPage() {
               <TH>SĐT</TH>
               <TH>Lớp đang học</TH>
               <TH>Trạng thái</TH>
+              <TH className="text-right">Thao tác</TH>
             </TR>
           </THead>
           <TBody>
             {filtered.length === 0 ? (
-              <EmptyRow colSpan={6}>Không có học viên nào khớp tìm kiếm.</EmptyRow>
+              <EmptyRow colSpan={7}>Không có học viên nào khớp tìm kiếm.</EmptyRow>
             ) : (
               filtered.map((student, index) => {
                 const activeClasses = (student.enrollments || [])
@@ -150,13 +152,22 @@ export default function StudentsPage() {
                     <TD>
                       <StatusBadge value={student.status} />
                     </TD>
+                    <TD className="w-px whitespace-nowrap text-right">
+                      <Link
+                        href={`/students/${student.id}`}
+                        className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-lg text-slate-700 bg-slate-100 hover:bg-slate-200"
+                      >
+                        <FileText className="h-3.5 w-3.5 mr-1" /> Hồ sơ
+                      </Link>
+                    </TD>
                   </TR>
                 );
               })
             )}
           </TBody>
         </Table>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }

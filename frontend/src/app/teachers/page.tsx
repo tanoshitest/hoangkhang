@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Eye, EyeOff } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, THead, TBody, TR, TH, TD, EmptyRow } from '@/components/ui/table';
@@ -44,7 +44,7 @@ export default function TeachersPage() {
   const fetchTeachers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/teachers`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/teachers?all=true`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       if (response.ok) setTeachers((await response.json()).data);
@@ -89,6 +89,16 @@ export default function TeachersPage() {
     }
   };
 
+  const toggleActive = async (t: Teacher) => {
+    const token = localStorage.getItem('token');
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/teachers/${t.id}`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isActive: !t.isActive }),
+    });
+    fetchTeachers();
+  };
+
   const filtered = teachers.filter(t =>
     t.name.toLowerCase().includes(search.toLowerCase()) ||
     t.code.toLowerCase().includes(search.toLowerCase())
@@ -117,101 +127,98 @@ export default function TeachersPage() {
 
         {/* Create Form */}
         {showForm && (
-          <div className="mt-6 bg-white border border-slate-200 shadow-sm sm:rounded-lg p-6">
-            <h3 className="text-base font-semibold text-slate-900 mb-4">Thêm giáo viên mới</h3>
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Họ tên *</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Điện thoại *</label>
-                <input
-                  type="tel"
-                  required
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Email</label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Hình thức hợp tác *</label>
-                <select
-                  value={formData.cooperationType}
-                  onChange={(e) => setFormData({ ...formData, cooperationType: e.target.value })}
-                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
-                >
-                  <option value="fulltime">Toàn thời gian</option>
-                  <option value="parttime">Bán thời gian</option>
-                  <option value="freelance">Cộng tác viên</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Học vấn</label>
-                <input
-                  type="text"
-                  value={formData.education}
-                  onChange={(e) => setFormData({ ...formData, education: e.target.value })}
-                  placeholder="VD: Thạc sĩ Nhật ngữ"
-                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Chứng chỉ</label>
-                <input
-                  type="text"
-                  value={formData.certificates}
-                  onChange={(e) => setFormData({ ...formData, certificates: e.target.value })}
-                  placeholder="VD: JLPT N1, Chứng chỉ sư phạm"
-                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Giờ tối đa/tuần</label>
-                <input
-                  type="number"
-                  value={formData.maxHoursPerWeek}
-                  onChange={(e) => setFormData({ ...formData, maxHoursPerWeek: e.target.value })}
-                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
-                />
-              </div>
-              <div className="md:col-span-2 flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 bg-white hover:bg-slate-50"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
-                >
-                  {submitting ? 'Đang lưu...' : 'Thêm giáo viên'}
-                </button>
-              </div>
-            </form>
-          </div>
+          <form onSubmit={handleSubmit} className="mb-6 bg-white border border-slate-200 shadow-sm rounded-lg p-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="block text-xs text-slate-600">Họ tên *</label>
+              <input
+                type="text"
+                required
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-600">Điện thoại *</label>
+              <input
+                type="tel"
+                required
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-600">Email</label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-600">Hình thức hợp tác *</label>
+              <select
+                value={formData.cooperationType}
+                onChange={(e) => setFormData({ ...formData, cooperationType: e.target.value })}
+                className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+              >
+                <option value="fulltime">Toàn thời gian</option>
+                <option value="parttime">Bán thời gian</option>
+                <option value="freelance">Cộng tác viên</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-slate-600">Học vấn</label>
+              <input
+                type="text"
+                value={formData.education}
+                onChange={(e) => setFormData({ ...formData, education: e.target.value })}
+                placeholder="VD: Thạc sĩ Nhật ngữ"
+                className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-600">Chứng chỉ</label>
+              <input
+                type="text"
+                value={formData.certificates}
+                onChange={(e) => setFormData({ ...formData, certificates: e.target.value })}
+                placeholder="VD: JLPT N1, Chứng chỉ sư phạm"
+                className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-600">Giờ tối đa/tuần</label>
+              <input
+                type="number"
+                value={formData.maxHoursPerWeek}
+                onChange={(e) => setFormData({ ...formData, maxHoursPerWeek: e.target.value })}
+                className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="sm:col-span-2 flex gap-2">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm disabled:opacity-50"
+              >
+                {submitting ? 'Đang lưu...' : 'Tạo'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="px-4 py-2 border border-slate-300 rounded-lg text-sm"
+              >
+                Hủy
+              </button>
+            </div>
+          </form>
         )}
 
         {/* Teachers Table */}
-        <Card className="mt-6 overflow-hidden">
+        <Card className="overflow-hidden">
           <CardHeader className="flex-col items-start gap-3">
             <div className="flex w-full items-start justify-between gap-4">
               <div>
@@ -250,11 +257,12 @@ export default function TeachersPage() {
                 <TH className="text-center">Lớp</TH>
                 <TH className="text-center">Buổi dạy</TH>
                 <TH>Trạng thái</TH>
+                <TH className="text-right">Thao tác</TH>
               </TR>
             </THead>
             <TBody>
               {filtered.length === 0 ? (
-                <EmptyRow colSpan={9}>Chưa có giáo viên nào.</EmptyRow>
+                <EmptyRow colSpan={10}>Chưa có giáo viên nào.</EmptyRow>
               ) : (
                 filtered.map((teacher, index) => (
                   <TR key={teacher.id}>
@@ -283,6 +291,14 @@ export default function TeachersPage() {
                       <Badge tone={teacher.isActive ? 'green' : 'slate'}>
                         {teacher.isActive ? 'Đang dạy' : 'Ngừng'}
                       </Badge>
+                    </TD>
+                    <TD className="w-px whitespace-nowrap text-right">
+                      <button onClick={() => toggleActive(teacher)}
+                        className={`inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-lg ${
+                          teacher.isActive ? 'text-red-700 bg-red-50 hover:bg-red-100' : 'text-green-700 bg-green-50 hover:bg-green-100'
+                        }`}>
+                        {teacher.isActive ? <><EyeOff className="h-3.5 w-3.5 mr-1" /> Vô hiệu</> : <><Eye className="h-3.5 w-3.5 mr-1" /> Kích hoạt</>}
+                      </button>
                     </TD>
                   </TR>
                 ))

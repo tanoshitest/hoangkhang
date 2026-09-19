@@ -23,7 +23,8 @@ const teacherSchema = z.object({
 router.get('/', requirePermission('teachers', 'read'), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const search = req.query.search as string | undefined;
-    const where: any = { isActive: true };
+    const includeInactive = req.query.all === 'true';
+    const where: any = includeInactive ? {} : { isActive: true };
     if (search) {
       where.OR = [
         { name: { contains: search } },
