@@ -34,6 +34,23 @@ router.get('/', requirePermission('system', 'read'), async (req: AuthenticatedRe
   }
 });
 
+// GET /api/users/sales - Sale/CTV nhẹ cho form ghi danh (không cần system:read)
+router.get('/sales', requirePermission('leads', 'read'), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const users = await prisma.user.findMany({
+      where: {
+        isActive: true,
+        roles: { some: { role: { name: { in: ['sales', 'sales_leader', 'manager', 'admin'] } } } },
+      },
+      select: { id: true, name: true, roles: { include: { role: { select: { name: true } } } } },
+      orderBy: { name: 'asc' },
+    });
+    res.json({ data: users.map(u => ({ id: u.id, name: u.name, roles: u.roles.map(r => r.role.name) })) });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch sales users' });
+  }
+});
+
 // GET /api/users/roles/list - Get all roles
 router.get('/roles/list', async (req: AuthenticatedRequest, res: Response) => {
   try {

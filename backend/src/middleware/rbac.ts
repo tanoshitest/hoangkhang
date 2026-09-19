@@ -5,16 +5,23 @@ import type { AuthenticatedRequest } from '../types';
 const ROLE_PERMISSIONS: Record<string, string[]> = {
   admin: [
     'leads:*', 'students:*', 'courses:*', 'classes:*', 'sessions:*',
-    'attendance:*', 'finance:*', 'teachers:*', 'reports:*', 'system:*'
+    'attendance:*', 'finance:*', 'teachers:*', 'reports:*', 'system:*',
+    'approvals:*', 'commissions:*', 'chat:*'
   ],
   manager: [
     'leads:read', 'leads:write', 'students:read', 'students:write',
     'courses:read', 'courses:write', 'classes:read', 'classes:write',
     'sessions:read', 'sessions:write', 'attendance:read', 'attendance:write',
-    'finance:read', 'teachers:read', 'teachers:write', 'reports:read'
+    'finance:read', 'teachers:read', 'teachers:write', 'reports:read',
+    'commissions:read', 'chat:use'
   ],
   sales: [
-    'leads:*', 'students:read', 'classes:read', 'reports:own'
+    'leads:*', 'students:read', 'classes:read', 'reports:own',
+    'commissions:read', 'chat:use'
+  ],
+  sales_leader: [
+    'leads:*', 'students:read', 'classes:read', 'reports:read',
+    'approvals:read', 'approvals:level1', 'commissions:read', 'chat:use'
   ],
   academic: [
     'leads:read', 'students:*', 'courses:*', 'classes:*', 'sessions:*',

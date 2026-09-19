@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, FileText } from 'lucide-react';
+import { ArrowLeft, FileText, Printer } from 'lucide-react';
 import { formatVND, formatDate } from '../page';
 
 interface Payment {
@@ -11,8 +11,12 @@ interface Payment {
   amount: number;
   paymentDate: string;
   method: string;
+  itemType: string;
+  content: string | null;
   reference: string | null;
   status: string;
+  sentToStudent: boolean;
+  collector?: { name: string } | null;
   receivable: {
     student: { id: string; code: string; name: string };
     course: { code: string; name: string };
@@ -20,7 +24,10 @@ interface Payment {
 }
 
 const METHOD_LABELS: Record<string, string> = {
-  cash: 'Tiền mặt', bank_transfer: 'Chuyển khoản', card: 'Thẻ', other: 'Khác',
+  cash: 'Tiền mặt', bank_transfer: 'Chuyển khoản', e_wallet: 'Ví điện tử', deposit_credit: 'Trừ cọc', card: 'Thẻ', other: 'Khác',
+};
+const ITEM_LABELS: Record<string, string> = {
+  deposit: 'Cọc giữ chỗ', tuition: 'Học phí', pdf_material: 'Giáo trình PDF', makeup_hours: 'Giờ bù', other: 'Khác',
 };
 const STATUS: Record<string, { label: string; color: string }> = {
   pending: { label: 'Chờ xác nhận', color: 'bg-yellow-100 text-yellow-800' },
@@ -57,6 +64,20 @@ export default function PaymentsPage() {
   };
 
   const totalConfirmed = payments.filter(p => p.status === 'confirmed').reduce((s, p) => s + p.amount, 0);
+
+  const printReceipt = async (id: string) => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/finance/payments/${id}/receipt.pdf`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) {
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } else {
+      alert('Không tạo được phiếu thu');
+    }
+  };
 
   return (
     <div>
@@ -120,17 +141,30 @@ export default function PaymentsPage() {
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS[p.status]?.color}`}>
                           {STATUS[p.status]?.label}
                         </span>
+                        <span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-600">
+                          {ITEM_LABELS[p.itemType] || p.itemType}
+                        </span>
+                        {p.sentToStudent && (
+                          <span className="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700">Đã gửi HV</span>
+                        )}
                       </div>
                       <p className="text-sm text-slate-500 mt-1">
                         {p.receivable.student.name} ({p.receivable.student.code}) • {p.receivable.course.name}
+                        {p.content && ` • ${p.content}`}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-slate-900">{formatVND(p.amount)}</p>
-                      <p className="text-xs text-slate-500">
-                        {METHOD_LABELS[p.method]} • {formatDate(p.paymentDate)}
-                        {p.reference && ` • ${p.reference}`}
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-slate-900">{formatVND(p.amount)}</p>
+                        <p className="text-xs text-slate-500">
+                          {METHOD_LABELS[p.method] || p.method} • {formatDate(p.paymentDate)}
+                          {p.collector?.name && ` • ${p.collector.name}`}
+                        </p>
+                      </div>
+                      <button onClick={() => printReceipt(p.id)} title="In phiếu thu PDF"
+                        className="p-2 text-slate-400 hover:text-brand-600 border border-slate-200 rounded-lg hover:bg-slate-50">
+                        <Printer className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                 </li>

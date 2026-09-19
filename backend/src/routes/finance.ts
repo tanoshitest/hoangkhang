@@ -3,6 +3,9 @@ import type { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { requirePermission, requireRole } from '../middleware/rbac';
 import type { AuthenticatedRequest } from '../types';
+import { buildReceiptPdf } from '../lib/receipt';
+import { getSetting } from '../lib/settings';
+import { auditLog } from './admin';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -52,9 +55,62 @@ async function syncReceivableStatus(receivableId: string) {
   }
 }
 
-async function generatePaymentCode(): Promise<string> {
-  const count = await prisma.payment.count();
-  return `P${String(count + 1).padStart(6, '0')}`;
+// Số phiếu thu PT#### — tự tăng qua counter trong settings, KHÔNG tái sử dụng khi xóa/hủy (spec BR)
+async function nextReceiptNo(): Promise<{ no: number; code: string }> {
+  const prefix = await getSetting('receipt_prefix', 'PT');
+  const rows = await prisma.$queryRaw<{ n: number }[]>`
+    UPDATE settings SET value = CAST(CAST(value AS INTEGER) + 1 AS TEXT)
+    WHERE key = 'receipt_seq' RETURNING CAST(value AS INTEGER) AS n`;
+  let no = rows[0]?.n;
+  if (!no) {
+    // First run: seed counter above current max receiptNo
+    const max = await prisma.payment.aggregate({ _max: { receiptNo: true } });
+    no = (max._max.receiptNo || 0) + 1;
+    await prisma.setting.create({ data: { key: 'receipt_seq', value: String(no), type: 'number', description: 'Bộ đếm số phiếu thu (nội bộ)' } });
+  }
+  return { no, code: `${prefix}${String(no).padStart(4, '0')}` };
+}
+
+// Khi phiếu cọc được xác nhận → tự động trừ vào khoản học phí đầu tiên còn nợ (spec: cọc trừ vào học phí)
+async function applyDepositToTuition(depositPayment: { id: string; code: string; amount: number; receivableId: string; confirmedBy?: string | null }) {
+  const depositReceivable = await prisma.receivable.findUnique({ where: { id: depositPayment.receivableId } });
+  if (!depositReceivable?.enrollmentId) return;
+  const tuition = await prisma.receivable.findFirst({
+    where: {
+      enrollmentId: depositReceivable.enrollmentId,
+      periodType: { in: ['block', 'monthly'] },
+      status: { in: ['pending', 'partial', 'overdue'] },
+    },
+    orderBy: { createdAt: 'asc' },
+    include: { payments: { where: { status: 'confirmed' } } },
+  });
+  if (!tuition) return;
+  const alreadyPaid = tuition.payments.reduce((s, p) => s + p.amount, 0);
+  const remaining = tuition.totalAmount - alreadyPaid;
+  const applyAmount = Math.min(depositPayment.amount, remaining);
+  if (applyAmount <= 0) return;
+
+  const { no, code } = await nextReceiptNo();
+  await prisma.payment.create({
+    data: {
+      receivableId: tuition.id,
+      code,
+      receiptNo: no,
+      amount: applyAmount,
+      itemType: 'deposit',
+      content: `Trừ cọc giữ chỗ (${depositPayment.code})`,
+      method: 'deposit_credit',
+      status: 'confirmed',
+      confirmedBy: depositPayment.confirmedBy || null,
+      confirmedAt: new Date(),
+      createdBy: depositPayment.confirmedBy || 'system',
+    },
+  });
+  await prisma.enrollment.update({
+    where: { id: depositReceivable.enrollmentId },
+    data: { depositApplied: { increment: applyAmount } },
+  });
+  await syncReceivableStatus(tuition.id);
 }
 
 // ==================== RECEIVABLES ====================
@@ -111,7 +167,7 @@ router.get('/receivables', requirePermission('finance', 'read'), async (req: Aut
 // POST /api/finance/receivables - Create receivable
 router.post('/receivables', requirePermission('finance', 'write'), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { studentId, courseId, standardFee, discount, scholarship, extraFee, dueDate } = req.body;
+    const { studentId, courseId, enrollmentId, standardFee, discount, scholarship, extraFee, dueDate, periodType, periodLabel } = req.body;
     if (!studentId || !courseId || standardFee === undefined) {
       return res.status(400).json({ error: 'studentId, courseId, standardFee required' });
     }
@@ -125,11 +181,14 @@ router.post('/receivables', requirePermission('finance', 'write'), async (req: A
       data: {
         studentId,
         courseId,
+        enrollmentId: enrollmentId || null,
         standardFee,
         discount: discount || 0,
         scholarship: scholarship || 0,
         extraFee: extraFee || 0,
         totalAmount,
+        periodType: periodType || null,
+        periodLabel: periodLabel || null,
         dueDate: dueDate ? new Date(dueDate) : undefined,
         status: 'pending',
       },
@@ -228,10 +287,12 @@ router.get('/payments', requirePermission('finance', 'read'), async (req: Authen
       where,
       orderBy: { paymentDate: 'desc' },
       include: {
+        collector: { select: { id: true, name: true } },
         receivable: {
           include: {
             student: { select: { id: true, code: true, name: true } },
             course: { select: { id: true, code: true, name: true } },
+            enrollment: { select: { id: true, code: true } },
           },
         },
       },
@@ -252,21 +313,29 @@ router.post('/receivables/:id/payments', requirePermission('finance', 'write'), 
       return res.status(409).json({ error: 'Receivable is cancelled' });
     }
 
-    const { amount, paymentDate, method, reference, receipt } = req.body;
+    const { amount, paymentDate, method, reference, itemType, content } = req.body;
     if (!amount || amount <= 0) {
       return res.status(400).json({ error: 'Valid amount required' });
     }
+    const validItems = ['deposit', 'tuition', 'pdf_material', 'makeup_hours', 'other'];
+    if (itemType && !validItems.includes(itemType)) {
+      return res.status(400).json({ error: `itemType must be one of: ${validItems.join(', ')}` });
+    }
 
+    const { no, code } = await nextReceiptNo();
     const payment = await prisma.payment.create({
       data: {
         receivableId: receivable.id,
-        code: await generatePaymentCode(),
+        code,
+        receiptNo: no,
         amount,
+        itemType: itemType || (receivable.periodType === 'deposit' ? 'deposit' : 'tuition'),
+        content: content || receivable.periodLabel || null,
         paymentDate: paymentDate ? new Date(paymentDate) : new Date(),
         method: method || 'cash',
         reference,
-        receipt,
         status: 'pending',
+        collectorId: req.user!.id,
         createdBy: req.user!.id,
       },
     });
@@ -298,6 +367,10 @@ router.post('/payments/:id/confirm', requirePermission('finance', 'write'), asyn
       },
     });
     await syncReceivableStatus(payment.receivableId);
+    // Cọc giữ chỗ → tự trừ vào học phí
+    if (updated.itemType === 'deposit') {
+      await applyDepositToTuition({ ...updated, confirmedBy: req.user!.id });
+    }
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: 'Failed to confirm payment' });
@@ -322,6 +395,67 @@ router.post('/payments/:id/cancel', requirePermission('finance', 'write'), async
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: 'Failed to cancel payment' });
+  }
+});
+
+// GET /api/finance/payments/:id/receipt.pdf - In phiếu thu (PDF, font tiếng Việt)
+router.get('/payments/:id/receipt.pdf', requirePermission('finance', 'read'), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const payment = await prisma.payment.findUnique({
+      where: { id: req.params.id },
+      include: {
+        collector: { select: { name: true } },
+        receivable: {
+          include: {
+            student: { select: { code: true, name: true, phone: true } },
+            course: { select: { name: true } },
+            enrollment: { include: { class: { select: { code: true } } } },
+          },
+        },
+      },
+    });
+    if (!payment) return res.status(404).json({ error: 'Payment not found' });
+
+    const orgName = await getSetting('org_name', 'TRUNG TÂM NHẬT NGỮ HOÀNG KHANG');
+    const orgSub = await getSetting('org_subtitle', '');
+
+    const doc = buildReceiptPdf(
+      {
+        receiptCode: payment.code,
+        paymentDate: payment.paymentDate,
+        studentName: payment.receivable.student.name,
+        studentCode: payment.receivable.student.code,
+        studentPhone: payment.receivable.student.phone,
+        courseName: payment.receivable.course?.name,
+        classCode: payment.receivable.enrollment?.class?.code,
+        itemType: payment.itemType,
+        content: payment.content,
+        amount: payment.amount,
+        method: payment.method,
+        collectorName: payment.collector?.name,
+      },
+      { name: orgName, sub: orgSub || undefined }
+    );
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${payment.code}.pdf"`);
+    doc.pipe(res);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to generate receipt' });
+  }
+});
+
+// POST /api/finance/payments/:id/sent - đánh dấu đã gửi phiếu cho HV
+router.post('/payments/:id/sent', requirePermission('finance', 'write'), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const updated = await prisma.payment.update({
+      where: { id: req.params.id },
+      data: { sentToStudent: true },
+    });
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to mark sent' });
   }
 });
 

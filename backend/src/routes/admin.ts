@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { requireRole, requirePermission } from '../middleware/rbac';
 import type { AuthenticatedRequest } from '../types';
+import { clearSettingsCache } from '../lib/settings';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -233,10 +234,54 @@ router.put('/settings/:key', requireRole(['admin']), async (req: AuthenticatedRe
       update: { value: String(value), type, description },
       create: { key: req.params.key, value: String(value), type: type || 'string', description },
     });
+    clearSettingsCache();
     await auditLog(req.user!.id, 'update', 'setting', setting.id, null, { key: req.params.key, value });
     res.json(setting);
   } catch (error) {
     res.status(500).json({ error: 'Failed to save setting' });
+  }
+});
+
+// ==================== DON_GIA_GV (đơn giá giờ dạy lớp 1-1) ====================
+
+// GET /api/admin/teacher-rates - bảng đơn giá chung (teacherId=null) + override theo GV
+router.get('/teacher-rates', requireRole(['admin', 'manager']), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const rates = await prisma.teacherRate.findMany({
+      where: { effectiveTo: null },
+      orderBy: [{ level: 'asc' }, { employmentStatus: 'asc' }],
+      include: { teacher: { select: { id: true, code: true, name: true } } },
+    });
+    res.json({ data: rates });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch teacher rates' });
+  }
+});
+
+// PUT /api/admin/teacher-rates - cập nhật đơn giá chung theo level × trạng thái
+router.put('/teacher-rates', requireRole(['admin']), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { level, employmentStatus, rate } = req.body;
+    if (!level || !employmentStatus || rate === undefined) {
+      return res.status(400).json({ error: 'level, employmentStatus, rate required' });
+    }
+    if (rate < 0) return res.status(400).json({ error: 'rate must be >= 0' });
+
+    const existing = await prisma.teacherRate.findFirst({
+      where: { teacherId: null, level, employmentStatus, effectiveTo: null },
+    });
+    let row;
+    if (existing) {
+      row = await prisma.teacherRate.update({ where: { id: existing.id }, data: { rate } });
+    } else {
+      row = await prisma.teacherRate.create({
+        data: { teacherId: null, level, employmentStatus, classType: 'one_on_one', role: 'main', rate, effectiveFrom: new Date() },
+      });
+    }
+    await auditLog(req.user!.id, 'update', 'teacher_rate', row.id, existing ? { rate: existing.rate } : null, { level, employmentStatus, rate });
+    res.json(row);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to save teacher rate' });
   }
 });
 

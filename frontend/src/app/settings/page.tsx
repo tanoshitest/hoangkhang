@@ -3,19 +3,21 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   Users, Shield, Tag, Upload, FileText, Settings as SettingsIcon,
-  Plus, Download, CheckCircle, XCircle,
+  Plus, Download, CheckCircle, XCircle, DollarSign, BookOpen,
 } from 'lucide-react';
 import UsersPanel from '@/components/admin/UsersPanel';
 
-type Tab = 'users' | 'roles' | 'statuses' | 'import' | 'audit' | 'settings';
+type Tab = 'users' | 'roles' | 'statuses' | 'import' | 'audit' | 'settings' | 'pricing' | 'teacher_rates';
 
 const TABS: { id: Tab; name: string; icon: any }[] = [
   { id: 'users', name: 'Người dùng', icon: Users },
   { id: 'roles', name: 'Vai trò', icon: Shield },
   { id: 'statuses', name: 'Trạng thái', icon: Tag },
+  { id: 'pricing', name: 'Bảng giá khóa', icon: BookOpen },
+  { id: 'teacher_rates', name: 'Đơn giá GV', icon: DollarSign },
   { id: 'import', name: 'Nhập dữ liệu', icon: Upload },
   { id: 'audit', name: 'Nhật ký', icon: FileText },
-  { id: 'settings', name: 'Cấu hình', icon: SettingsIcon },
+  { id: 'settings', name: 'Tham số', icon: SettingsIcon },
 ];
 
 function authHeader() {
@@ -72,6 +74,8 @@ export default function SettingsPage() {
           {tab === 'users' && <UsersPanel />}
           {tab === 'roles' && <RolesTab />}
           {tab === 'statuses' && <StatusesTab />}
+          {tab === 'pricing' && <CoursePricingTab />}
+          {tab === 'teacher_rates' && <TeacherRatesTab />}
           {tab === 'import' && <ImportTab />}
           {tab === 'audit' && <AuditTab />}
           {tab === 'settings' && <SettingsTab />}
@@ -468,7 +472,219 @@ function AuditTab() {
   );
 }
 
+// ==================== COURSE PRICING (bảng giá khóa học) ====================
+
+function CoursePricingTab() {
+  const [courses, setCourses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saved, setSaved] = useState('');
+
+  useEffect(() => { fetchCourses(); }, []);
+
+  const fetchCourses = async () => {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/courses`, { headers: authHeader() });
+    if (res.ok) setCourses((await res.json()).data || []);
+    setLoading(false);
+  };
+
+  const saveField = async (course: any, field: string, value: string) => {
+    const num = value === '' ? null : Number(value);
+    if (num !== null && isNaN(num)) return;
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/courses/${course.id}`, {
+      method: 'PUT',
+      headers: { ...authHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [field]: num }),
+    });
+    if (res.ok) { setSaved(course.id + field); setTimeout(() => setSaved(''), 1500); fetchCourses(); }
+  };
+
+  const numCell = (c: any, field: string) => (
+    <td className="px-2 py-2" key={field}>
+      <div className="flex items-center gap-1">
+        <input type="number" defaultValue={c[field] ?? ''} min={0}
+          onBlur={(e) => String(e.target.value) !== String(c[field] ?? '') && saveField(c, field, e.target.value)}
+          className="w-24 border border-slate-300 rounded px-1.5 py-1 text-sm text-right" />
+        {saved === c.id + field && <CheckCircle className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />}
+      </div>
+    </td>
+  );
+
+  if (loading) return <p className="text-center py-8 text-sm text-slate-500">Đang tải...</p>;
+
+  return (
+    <div className="bg-white border border-slate-200 shadow-sm overflow-x-auto sm:rounded-xl">
+      <div className="px-4 py-3 border-b border-slate-200 text-xs text-slate-500">
+        Đơn giá theo giờ học (VNĐ/giờ). Luyện thi = nền tảng cùng level. BJT đồng nhất mọi hình thức.
+      </div>
+      <table className="min-w-full divide-y divide-slate-200">
+        <thead className="bg-slate-50">
+          <tr>
+            <th className="px-3 py-2 text-left text-xs font-medium text-slate-500">Mã khóa</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-slate-500">Tên khóa</th>
+            <th className="px-2 py-2 text-right text-xs font-medium text-slate-500">Giờ 1-1</th>
+            <th className="px-2 py-2 text-right text-xs font-medium text-slate-500">Giờ nhóm</th>
+            <th className="px-2 py-2 text-right text-xs font-medium text-slate-500">Block (giờ)</th>
+            <th className="px-2 py-2 text-right text-xs font-medium text-slate-500">Giá 1-1</th>
+            <th className="px-2 py-2 text-right text-xs font-medium text-slate-500">Giá nhóm 2-5</th>
+            <th className="px-2 py-2 text-right text-xs font-medium text-slate-500">Giá nhóm 6-10</th>
+            <th className="px-2 py-2 text-right text-xs font-medium text-slate-500">Giáo trình PDF</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-200">
+          {courses.map((c) => (
+            <tr key={c.id} className="hover:bg-slate-50">
+              <td className="px-3 py-2 text-sm font-mono font-medium text-slate-900">{c.code}</td>
+              <td className="px-3 py-2 text-sm text-slate-700">{c.name}</td>
+              {numCell(c, 'hoursOneOnOne')}
+              {numCell(c, 'hoursGroup')}
+              {numCell(c, 'blockHours')}
+              {numCell(c, 'priceOneOnOne')}
+              {numCell(c, 'priceGroup2to5')}
+              {numCell(c, 'priceGroup6to10')}
+              {numCell(c, 'pdfPrice')}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ==================== TEACHER RATES (DON_GIA_GV) ====================
+
+function TeacherRatesTab() {
+  const [rates, setRates] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saved, setSaved] = useState('');
+
+  const LEVELS = ['N5-N4', 'N3', 'N2', 'BJT'];
+  const STATUSES = [
+    { key: 'probation', label: 'Thử việc' },
+    { key: 'official', label: 'Chính thức' },
+  ];
+
+  useEffect(() => { fetchRates(); }, []);
+
+  const fetchRates = async () => {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/teacher-rates`, { headers: authHeader() });
+    if (res.ok) setRates((await res.json()).data || []);
+    setLoading(false);
+  };
+
+  const globalRate = (level: string, status: string) =>
+    rates.find(r => r.teacherId === null && r.level === level && r.employmentStatus === status);
+
+  const saveRate = async (level: string, employmentStatus: string, value: string) => {
+    const rate = Number(value);
+    if (isNaN(rate) || rate < 0) return;
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/teacher-rates`, {
+      method: 'PUT',
+      headers: { ...authHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ level, employmentStatus, rate }),
+    });
+    if (res.ok) { setSaved(level + employmentStatus); setTimeout(() => setSaved(''), 1500); fetchRates(); }
+  };
+
+  if (loading) return <p className="text-center py-8 text-sm text-slate-500">Đang tải...</p>;
+
+  const overrides = rates.filter(r => r.teacherId !== null);
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white border border-slate-200 shadow-sm sm:rounded-xl overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-200">
+          <h3 className="text-md font-medium text-slate-900">Đơn giá giờ dạy lớp 1-1 (VNĐ/giờ)</h3>
+          <p className="text-xs text-slate-500 mt-0.5">Lớp nhóm tính theo tỷ lệ doanh thu (xem Tham số: group_payroll_*). Đơn giá 0 = chưa nhập.</p>
+        </div>
+        <table className="min-w-full divide-y divide-slate-200">
+          <thead className="bg-slate-50">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Level giá</th>
+              {STATUSES.map(s => (
+                <th key={s.key} className="px-4 py-3 text-right text-xs font-medium text-slate-500">{s.label}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200">
+            {LEVELS.map(level => (
+              <tr key={level}>
+                <td className="px-4 py-3 text-sm font-medium text-slate-900">{level}</td>
+                {STATUSES.map(s => {
+                  const r = globalRate(level, s.key);
+                  return (
+                    <td key={s.key} className="px-4 py-3 text-right">
+                      <div className="inline-flex items-center gap-1">
+                        <input type="number" min={0} defaultValue={r?.rate ?? 0}
+                          onBlur={(e) => Number(e.target.value) !== (r?.rate ?? 0) && saveRate(level, s.key, e.target.value)}
+                          className="w-28 border border-slate-300 rounded px-2 py-1 text-sm text-right" />
+                        {saved === level + s.key && <CheckCircle className="h-3.5 w-3.5 text-green-500" />}
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {overrides.length > 0 && (
+        <div className="bg-white border border-slate-200 shadow-sm sm:rounded-xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-200">
+            <h3 className="text-md font-medium text-slate-900">Đơn giá riêng theo giáo viên</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Quản lý trong trang Giáo viên → chi tiết → Đơn giá</p>
+          </div>
+          <table className="min-w-full divide-y divide-slate-200">
+            <tbody className="divide-y divide-slate-200">
+              {overrides.map(r => (
+                <tr key={r.id}>
+                  <td className="px-4 py-2 text-sm text-slate-900">{r.teacher?.name} ({r.teacher?.code})</td>
+                  <td className="px-4 py-2 text-sm text-slate-500">{r.classType || '—'} / {r.role}</td>
+                  <td className="px-4 py-2 text-sm text-right font-medium">{new Intl.NumberFormat('vi-VN').format(r.rate)} đ</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ==================== SETTINGS ====================
+
+const SETTING_LABELS: Record<string, string> = {
+  deposit_amount: 'Phí giữ chỗ / cọc (VNĐ)',
+  discount_full_course: 'Giảm khi đóng full khóa',
+  discount_relative: 'Giảm người thân/bạn bè',
+  discount_ctv_enrolled: 'Giảm cho CTV có học',
+  commission_ctv_not_enrolled: 'HH CTV không học',
+  commission_center_lead: 'HH sale — lead trung tâm',
+  commission_self_sourced: 'HH sale — lead tự tìm',
+  bonus_retention: 'Thưởng GV giữ sĩ số (VNĐ/lớp)',
+  bonus_jlpt_pass: 'Thưởng GV — HV đậu JLPT (VNĐ)',
+  bonus_teacher_referral_pct: 'Thưởng GV giới thiệu HV (%)',
+  excused_absence_per_month: 'Số nghỉ phép / tháng',
+  absence_notice_hours: 'Báo nghỉ trước tối thiểu (giờ)',
+  absence_warning_count: 'Cảnh báo vắng từ (buổi)',
+  lead_dead_days: 'Lead chết sau (ngày)',
+  group_min_students: 'Sĩ số min lớp nhóm',
+  group_max_students: 'Sĩ số max lớp nhóm',
+  tier_2_5_max: 'Khung 2-5 áp dụng đến sĩ số',
+  reserve_months: 'Thời hạn bảo lưu (tháng)',
+  sale_target_new_students: 'Target HV mới/tháng',
+  clawback_suspend_count: 'Số HV bảo lưu → cảnh báo thu hồi HH',
+  discount_cap: 'Trần tổng % giảm',
+  pass_threshold: 'Ngưỡng đạt bài KT',
+  lead_care_cycle_days: 'Chu kỳ nhắc chăm sóc lead (ngày)',
+  group_payroll_floor_ratio: 'Lương nhóm — tỷ lệ sàn',
+  group_payroll_extra_per_student: 'Lương nhóm — +%/HV vượt min',
+  main_teachers_per_class: 'Số GV chính / lớp',
+  receipt_prefix: 'Tiền tố số phiếu thu',
+  pdf_material_price: 'Giá giáo trình PDF mặc định',
+  org_name: 'Tên trung tâm (phiếu thu)',
+  org_subtitle: 'Địa chỉ/MST (phiếu thu)',
+};
 
 function SettingsTab() {
   const [settings, setSettings] = useState<any[]>([]);
@@ -526,7 +742,10 @@ function SettingsTab() {
           <tbody className="divide-y divide-slate-200">
             {settings.map((s) => (
               <tr key={s.id}>
-                <td className="px-3 py-2 text-sm font-mono text-slate-900 w-48">{s.key}</td>
+                <td className="px-3 py-2 w-64">
+                  <div className="text-sm text-slate-900">{SETTING_LABELS[s.key] || s.key}</div>
+                  {SETTING_LABELS[s.key] && <div className="text-xs text-slate-400 font-mono">{s.key}</div>}
+                </td>
                 <td className="px-3 py-2 text-sm text-slate-600 w-64">{s.description}</td>
                 <td className="px-3 py-2">
                   <input

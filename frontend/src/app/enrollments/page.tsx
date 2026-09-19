@@ -2,71 +2,57 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Search, Filter, MoreHorizontal, BookOpen, Users, Calendar, ArrowLeft } from 'lucide-react';
+import { Plus, Search, BookOpen, PauseCircle, PlayCircle, XCircle, CheckCircle } from 'lucide-react';
 import { SalesTabs } from '@/components/SalesTabs';
 
 interface Enrollment {
   id: string;
+  code?: string;
   status: string;
   enrolledAt: string;
-  startDate?: string;
-  endDate?: string;
-  student: {
-    id: string;
-    code: string;
-    name: string;
-  };
-  course: {
-    id: string;
-    code: string;
-    name: string;
-  };
-  class?: {
-    id: string;
-    code: string;
-  };
-  events?: Array<{
-    id: string;
-    type: string;
-    effectiveDate: string;
-    reason?: string;
-  }>;
+  classType?: string;
+  priceTier?: string | null;
+  billingType?: string;
+  finalFee?: number;
+  discountPct?: number;
+  suspendUntil?: string | null;
+  student: { id: string; code: string; name: string };
+  course: { id: string; code: string; name: string };
+  class?: { id: string; code: string } | null;
+  sale1?: { id: string; name: string } | null;
+  receivables?: { id: string; status: string; totalAmount: number; periodType?: string; periodLabel?: string }[];
 }
+
+const STATUS: Record<string, { label: string; color: string }> = {
+  reserved: { label: 'Giữ chỗ', color: 'bg-yellow-100 text-yellow-800' },
+  studying: { label: 'Đang học', color: 'bg-green-100 text-green-800' },
+  suspended: { label: 'Bảo lưu', color: 'bg-blue-100 text-blue-800' },
+  dropped: { label: 'Nghỉ học', color: 'bg-red-100 text-red-800' },
+  completed: { label: 'Hoàn thành', color: 'bg-slate-100 text-slate-800' },
+  enrolled: { label: 'Đã đăng ký', color: 'bg-brand-100 text-brand-800' },
+};
+
+const fmt = (n?: number) => (n === undefined ? '—' : new Intl.NumberFormat('vi-VN').format(Math.round(n)) + ' đ');
 
 export default function EnrollmentsPage() {
   const router = useRouter();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
-  useEffect(() => {
-    fetchEnrollments();
-  }, []);
+  useEffect(() => { fetchEnrollments(); }, [statusFilter]);
 
   const fetchEnrollments = async () => {
     try {
       const token = localStorage.getItem('token');
-      // This would need a proper API endpoint for enrollments
-      // For now, we'll fetch from students and extract enrollments
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/students`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+      const params = statusFilter ? `?status=${statusFilter}` : '';
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/enrollments${params}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        const allEnrollments = data.data.flatMap((student: any) => 
-          student.enrollments.map((enrollment: any) => ({
-            ...enrollment,
-            student: {
-              id: student.id,
-              code: student.code,
-              name: student.name,
-            }
-          }))
-        );
-        setEnrollments(allEnrollments);
+      if (res.ok) {
+        const data = await res.json();
+        setEnrollments(data.data || []);
       }
     } catch (error) {
       console.error('Failed to fetch enrollments:', error);
@@ -75,40 +61,27 @@ export default function EnrollmentsPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      enrolled: 'bg-brand-100 text-brand-800',
-      studying: 'bg-green-100 text-green-800',
-      completed: 'bg-slate-100 text-slate-800',
-      dropped: 'bg-red-100 text-red-800',
-      reserved: 'bg-yellow-100 text-yellow-800',
-    };
-    return colors[status] || 'bg-slate-100 text-slate-800';
+  const doTransition = async (id: string, action: string) => {
+    const reason = action === 'suspend' || action === 'drop' ? window.prompt('Lý do:') || '' : '';
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/enrollments/${id}/transition`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, reason }),
+    });
+    if (res.ok) fetchEnrollments();
+    else {
+      const d = await res.json();
+      alert(d.error || 'Thất bại');
+    }
   };
 
-  const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = {
-      enrolled: 'Đã đăng ký',
-      studying: 'Đang học',
-      completed: 'Hoàn thành',
-      dropped: 'Nghỉ học',
-      reserved: 'Bảo lưu',
-    };
-    return labels[status] || status;
-  };
-
-  const getEventTypeLabel = (type: string) => {
-    const types: Record<string, string> = {
-      enroll: 'Đăng ký',
-      assign_class: 'Xếp lớp',
-      transfer: 'Chuyển lớp',
-      reserve: 'Bảo lưu',
-      resume: 'Tiếp tục',
-      drop: 'Nghỉ học',
-      complete: 'Hoàn thành',
-    };
-    return types[type] || type;
-  };
+  const filtered = enrollments.filter(e =>
+    !search ||
+    e.student.name.toLowerCase().includes(search.toLowerCase()) ||
+    e.student.code.toLowerCase().includes(search.toLowerCase()) ||
+    (e.code || '').toLowerCase().includes(search.toLowerCase())
+  );
 
   if (loading) {
     return (
@@ -130,97 +103,122 @@ export default function EnrollmentsPage() {
             className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700"
           >
             <Plus className="-ml-1 mr-1.5 h-4 w-4" />
-            Đăng ký mới
+            Ghi danh mới
           </button>
         </div>
 
-        {/* Search and Filter */}
         <div className="mt-6 flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Tìm kiếm ghi danh..."
+                placeholder="Tìm theo tên, mã HV, mã GD..."
                 className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-200 w-full"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
           </div>
-          <button className="inline-flex items-center px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 bg-white hover:bg-slate-50">
-            <Filter className="mr-2 h-4 w-4" />
-            Lọc
-          </button>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+            className="border border-slate-300 rounded-lg px-3 py-2 text-sm">
+            <option value="">Tất cả trạng thái</option>
+            {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+          </select>
         </div>
 
-        {/* Enrollments Table */}
-        <div className="mt-8 bg-white border border-slate-200 shadow-sm overflow-hidden sm:rounded-xl">
-          <ul className="divide-y divide-slate-200">
-            {enrollments.map((enrollment) => (
-              <li key={enrollment.id}>
-                <div className="px-4 py-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <div className="h-10 w-10 rounded-full bg-brand-100 flex items-center justify-center">
-                          <BookOpen className="h-5 w-5 text-brand-600" />
-                        </div>
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-slate-900">
-                          {enrollment.student.name} ({enrollment.student.code})
-                        </div>
-                        <div className="text-sm text-slate-500">
-                          {enrollment.course.name} ({enrollment.course.code})
-                          {enrollment.class && ` • ${enrollment.class.code}`}
-                        </div>
-                        <div className="text-sm text-slate-500">
-                          Đăng ký: {new Date(enrollment.enrolledAt).toLocaleDateString('vi-VN')}
-                          {enrollment.startDate && ` • Bắt đầu: ${new Date(enrollment.startDate).toLocaleDateString('vi-VN')}`}
-                          {enrollment.endDate && ` • Kết thúc: ${new Date(enrollment.endDate).toLocaleDateString('vi-VN')}`}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(enrollment.status)}`}>
-                        {getStatusLabel(enrollment.status)}
+        <div className="mt-6 bg-white border border-slate-200 shadow-sm overflow-hidden sm:rounded-xl">
+          <table className="min-w-full divide-y divide-slate-200">
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Mã GD / Học viên</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Khóa / Lớp</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Hình thức</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Học phí</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Công nợ</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Trạng thái</th>
+                <th className="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {filtered.map((e) => {
+                const paid = (e.receivables || []).filter(r => r.status === 'paid').reduce((s, r) => s + r.totalAmount, 0);
+                const total = (e.receivables || []).reduce((s, r) => s + r.totalAmount, 0);
+                return (
+                  <tr key={e.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3">
+                      <div className="text-sm font-medium text-slate-900">{e.student.name}</div>
+                      <div className="text-xs text-slate-500">{e.code || e.id.slice(0, 8)} • {e.student.code}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="text-sm text-slate-900">{e.course.code}</div>
+                      <div className="text-xs text-slate-500">{e.class?.code || 'Chưa xếp lớp'}</div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-600">
+                      {e.classType === 'one_on_one' ? '1-1' : `Nhóm ${e.priceTier || ''}`}
+                      <div className="text-xs text-slate-400">{e.billingType === 'monthly' ? 'Thu tháng' : 'Thu block'}</div>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="text-sm font-medium text-slate-900">{fmt(e.finalFee)}</div>
+                      {(e.discountPct ?? 0) > 0 && <div className="text-xs text-green-600">−{Math.round((e.discountPct || 0) * 100)}%</div>}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      {total > 0 ? (
+                        <span className={paid >= total ? 'text-green-600' : 'text-amber-600'}>
+                          {fmt(paid)} / {fmt(total)}
+                        </span>
+                      ) : '—'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS[e.status]?.color || 'bg-slate-100'}`}>
+                        {STATUS[e.status]?.label || e.status}
                       </span>
-                      <button className="text-slate-400 hover:text-slate-600">
-                        <MoreHorizontal className="h-5 w-5" />
-                      </button>
-                    </div>
-                  </div>
-                  
-                  {/* Events */}
-                  {(enrollment.events?.length ?? 0) > 0 && (
-                    <div className="mt-3 ml-14">
-                      <h4 className="text-sm font-medium text-slate-900 mb-2">Lịch sử sự kiện:</h4>
-                      <div className="space-y-1">
-                        {enrollment.events!.map((event) => (
-                          <div key={event.id} className="text-sm text-slate-600">
-                            • {getEventTypeLabel(event.type)} - {new Date(event.effectiveDate).toLocaleDateString('vi-VN')}
-                            {event.reason && ` (${event.reason})`}
-                          </div>
-                        ))}
+                      {e.suspendUntil && (
+                        <div className="text-xs text-blue-600 mt-1">đến {new Date(e.suspendUntil).toLocaleDateString('vi-VN')}</div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1 justify-end">
+                        {(e.status === 'studying' || e.status === 'reserved') && (
+                          <button onClick={() => doTransition(e.id, 'suspend')} title="Bảo lưu (tối đa 3 tháng)"
+                            className="p-1.5 text-slate-400 hover:text-blue-600 rounded">
+                            <PauseCircle className="h-4 w-4" />
+                          </button>
+                        )}
+                        {e.status === 'suspended' && (
+                          <button onClick={() => doTransition(e.id, 'resume')} title="Nhập học lại"
+                            className="p-1.5 text-slate-400 hover:text-green-600 rounded">
+                            <PlayCircle className="h-4 w-4" />
+                          </button>
+                        )}
+                        {['studying', 'reserved', 'suspended'].includes(e.status) && (
+                          <>
+                            <button onClick={() => doTransition(e.id, 'complete')} title="Hoàn thành"
+                              className="p-1.5 text-slate-400 hover:text-green-600 rounded">
+                              <CheckCircle className="h-4 w-4" />
+                            </button>
+                            <button onClick={() => doTransition(e.id, 'drop')} title="Nghỉ học"
+                              className="p-1.5 text-slate-400 hover:text-red-600 rounded">
+                              <XCircle className="h-4 w-4" />
+                            </button>
+                          </>
+                        )}
                       </div>
-                    </div>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
 
-        {enrollments.length === 0 && (
-          <div className="text-center py-12">
-            <BookOpen className="mx-auto h-12 w-12 text-slate-400" />
-            <h3 className="mt-2 text-sm font-medium text-slate-900">Chưa có ghi danh nào</h3>
-            <p className="mt-1 text-sm text-slate-500">
-              Bắt đầu bằng cách đăng ký học viên vào khóa học.
-            </p>
-          </div>
-        )}
+          {filtered.length === 0 && (
+            <div className="text-center py-12">
+              <BookOpen className="mx-auto h-12 w-12 text-slate-400" />
+              <h3 className="mt-2 text-sm font-medium text-slate-900">Chưa có ghi danh nào</h3>
+              <p className="mt-1 text-sm text-slate-500">Bắt đầu bằng cách ghi danh học viên vào khóa học.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
