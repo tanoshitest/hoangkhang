@@ -14,6 +14,8 @@ interface AttendanceRecord {
   studentId: string;
   status: string;
   notes: string;
+  reportedBeforeHours?: string;
+  makeupDirection?: string;
 }
 
 interface Session {
@@ -30,6 +32,7 @@ interface Session {
   class: {
     id: string;
     code: string;
+    classType?: string;
     course: { name: string; level: string };
     classMembers: Array<{
       id: string;
@@ -42,6 +45,10 @@ interface Session {
     id: string;
     status: string;
     notes?: string;
+    reportedBeforeHours?: number;
+    excusedCountInMonth?: number;
+    countsAsAttended?: boolean;
+    makeupDirection?: string;
     student: Student;
   }>;
   progress: Array<{
@@ -69,6 +76,7 @@ export default function SessionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [attendanceMap, setAttendanceMap] = useState<Record<string, AttendanceRecord>>({});
+  const [savedAtt, setSavedAtt] = useState<Record<string, { countsAsAttended?: boolean }>>({});
   const [sessionInfo, setSessionInfo] = useState({ actualContent: '', homework: '', notes: '', status: '' });
   const [progressMap, setProgressMap] = useState<Record<string, { testScore: string; completionRate: string; teacherComment: string }>>({});
   const [savingProgress, setSavingProgress] = useState<string | null>(null);
@@ -101,9 +109,16 @@ export default function SessionDetailPage() {
             studentId: m.student.id,
             status: existing?.status || 'present',
             notes: existing?.notes || '',
+            reportedBeforeHours: existing?.reportedBeforeHours != null ? String(existing.reportedBeforeHours) : '',
+            makeupDirection: existing?.makeupDirection || '',
           };
         });
         setAttendanceMap(map);
+        const saved: Record<string, { countsAsAttended?: boolean }> = {};
+        (data.attendances || []).forEach((a: any) => {
+          saved[a.student.id] = { countsAsAttended: a.countsAsAttended };
+        });
+        setSavedAtt(saved);
         // Build progress map from existing records
         const pMap: Record<string, { testScore: string; completionRate: string; teacherComment: string }> = {};
         data.class.classMembers.forEach((m: any) => {
@@ -153,7 +168,14 @@ export default function SessionDetailPage() {
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
-      const attendances = Object.values(attendanceMap);
+      const attendances = Object.values(attendanceMap).map(a => ({
+        studentId: a.studentId,
+        status: a.status,
+        notes: a.notes,
+        reportedBeforeHours: a.reportedBeforeHours !== '' && a.reportedBeforeHours != null
+          ? Number(a.reportedBeforeHours) : undefined,
+        makeupDirection: a.makeupDirection || undefined,
+      }));
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sessions/${params.id}/attendance`, {
         method: 'POST',
         headers: {
@@ -163,8 +185,14 @@ export default function SessionDetailPage() {
         body: JSON.stringify({ attendances }),
       });
       if (response.ok) {
-        setSaveMessage('Đã lưu điểm danh');
-        setTimeout(() => setSaveMessage(''), 3000);
+        const data = await response.json();
+        setSaveMessage(
+          data.warningsCreated > 0
+            ? `Đã lưu — tạo ${data.warningsCreated} cảnh báo vắng`
+            : 'Đã lưu điểm danh'
+        );
+        setTimeout(() => setSaveMessage(''), 4000);
+        fetchSession(params.id as string);
       }
     } finally {
       setSaving(false);
@@ -380,6 +408,46 @@ export default function SessionDetailPage() {
                       ))}
                     </div>
                   </div>
+                  {(record.status === 'excused_absent' || record.status === 'unexcused_absent') && (
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                      <label className="flex items-center gap-1 text-slate-600">
+                        Báo trước:
+                        <input
+                          type="number" min={0} step={0.5} placeholder="giờ"
+                          value={record.reportedBeforeHours || ''}
+                          onChange={(e) => setAttendanceMap({
+                            ...attendanceMap,
+                            [member.student.id]: { ...record, reportedBeforeHours: e.target.value },
+                          })}
+                          className="w-16 border border-slate-300 rounded py-1 px-2 text-xs"
+                        />
+                        giờ
+                      </label>
+                      <select
+                        value={record.makeupDirection || ''}
+                        onChange={(e) => setAttendanceMap({
+                          ...attendanceMap,
+                          [member.student.id]: { ...record, makeupDirection: e.target.value },
+                        })}
+                        className="border border-slate-300 rounded py-1 px-2 text-xs text-slate-600"
+                      >
+                        <option value="">Hướng học bù…</option>
+                        {session.class.classType === 'one_on_one' ? (
+                          <option value="private_session">Dạy bù riêng (1-1)</option>
+                        ) : (
+                          <>
+                            <option value="watch_video">Xem video buổi học</option>
+                            <option value="makeup_other_class">Học bù lớp khác</option>
+                          </>
+                        )}
+                      </select>
+                      {savedAtt?.[member.student.id] && (
+                        <span className={`px-1.5 py-0.5 rounded ${savedAtt[member.student.id].countsAsAttended ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
+                          {savedAtt[member.student.id].countsAsAttended ? 'Vẫn tính 1 buổi' : 'Có phép — không tính buổi'}
+                        </span>
+                      )}
+                    </div>
+                  )}
                   {record.status !== 'present' && (
                     <input
                       type="text"

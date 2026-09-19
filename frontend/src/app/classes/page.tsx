@@ -12,12 +12,17 @@ interface ClassItem {
   id: string;
   code: string;
   format: string;
+  classType?: string;
+  shift?: string;
   startDate: string;
   endDate: string;
+  minStudents?: number;
   maxStudents?: number;
   currentStudents: number;
   status: string;
   meetingLink?: string;
+  driveLink?: string;
+  videoLink?: string;
   course: { id: string; code: string; name: string; level: string };
   mainTeacher?: { id: string; name: string };
   supportTeacher?: { id: string; name: string };
@@ -48,13 +53,18 @@ export default function ClassesPage() {
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     courseId: '',
+    classType: 'group',
+    shift: '',
     startDate: '',
     endDate: '',
-    maxStudents: '',
+    minStudents: '2',
+    maxStudents: '10',
     mainTeacherId: '',
     supportTeacherId: '',
     schedule: '',
     meetingLink: '',
+    driveLink: '',
+    videoLink: '',
   });
 
   useEffect(() => {
@@ -91,19 +101,24 @@ export default function ClassesPage() {
         },
         body: JSON.stringify({
           courseId: formData.courseId,
+          classType: formData.classType,
+          shift: formData.shift || undefined,
           startDate: formData.startDate,
           endDate: formData.endDate,
+          minStudents: formData.minStudents ? parseInt(formData.minStudents) : undefined,
           maxStudents: formData.maxStudents ? parseInt(formData.maxStudents) : undefined,
           mainTeacherId: formData.mainTeacherId || undefined,
           supportTeacherId: formData.supportTeacherId || undefined,
           schedule: formData.schedule || undefined,
           meetingLink: formData.meetingLink || undefined,
+          driveLink: formData.driveLink || undefined,
+          videoLink: formData.videoLink || undefined,
         }),
       });
       const data = await response.json();
       if (response.ok) {
         setShowForm(false);
-        setFormData({ courseId: '', startDate: '', endDate: '', maxStudents: '', mainTeacherId: '', supportTeacherId: '', schedule: '', meetingLink: '' });
+        setFormData({ courseId: '', classType: 'group', shift: '', startDate: '', endDate: '', minStudents: '2', maxStudents: '10', mainTeacherId: '', supportTeacherId: '', schedule: '', meetingLink: '', driveLink: '', videoLink: '' });
         fetchAll();
       } else {
         setError(data.detail || data.error || 'Failed to create class');
@@ -153,6 +168,41 @@ export default function ClassesPage() {
                     <option key={c.id} value={c.id}>{c.name} ({c.level})</option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Hình thức lớp *</label>
+                <select
+                  value={formData.classType}
+                  onChange={(e) => setFormData({ ...formData, classType: e.target.value })}
+                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
+                >
+                  <option value="group">Lớp nhóm (2-10 HV)</option>
+                  <option value="one_on_one">Kèm 1-1</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Ca dạy</label>
+                <select
+                  value={formData.shift}
+                  onChange={(e) => setFormData({ ...formData, shift: e.target.value })}
+                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
+                >
+                  <option value="">— Chọn ca —</option>
+                  <option value="morning">Sáng (8:00-11:00)</option>
+                  <option value="afternoon">Chiều (14:00-16:00)</option>
+                  <option value="evening">Tối (19:00-21:00)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700">
+                  Sĩ số tối thiểu{formData.classType === 'group' && ' (chưa đủ → Giữ chỗ)'}
+                </label>
+                <input
+                  type="number" min={1}
+                  value={formData.minStudents}
+                  onChange={(e) => setFormData({ ...formData, minStudents: e.target.value })}
+                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700">Sĩ số tối đa</label>
@@ -229,6 +279,26 @@ export default function ClassesPage() {
                   className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Link Drive tài liệu</label>
+                <input
+                  type="text"
+                  value={formData.driveLink}
+                  onChange={(e) => setFormData({ ...formData, driveLink: e.target.value })}
+                  placeholder="https://drive.google.com/..."
+                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Link video (học bù)</label>
+                <input
+                  type="text"
+                  value={formData.videoLink}
+                  onChange={(e) => setFormData({ ...formData, videoLink: e.target.value })}
+                  placeholder="https://drive.google.com/... (folder video)"
+                  className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
+                />
+              </div>
               <div className="md:col-span-2 flex justify-end space-x-3">
                 <button
                   type="button"
@@ -291,6 +361,7 @@ export default function ClassesPage() {
                 <TH className="w-10">#</TH>
                 <TH>Mã lớp</TH>
                 <TH>Khóa học</TH>
+                <TH>Hình thức / Ca</TH>
                 <TH>GV chính</TH>
                 <TH>Thời gian</TH>
                 <TH className="text-center">Sĩ số</TH>
@@ -300,7 +371,7 @@ export default function ClassesPage() {
             </THead>
             <TBody>
               {filtered.length === 0 ? (
-                <EmptyRow colSpan={8}>Chưa có lớp nào.</EmptyRow>
+                <EmptyRow colSpan={9}>Chưa có lớp nào.</EmptyRow>
               ) : (
                 filtered.map((cls, index) => (
                   <TR key={cls.id}>
@@ -314,6 +385,12 @@ export default function ClassesPage() {
                       </Link>
                     </TD>
                     <TD className="whitespace-nowrap">{cls.course.name}</TD>
+                    <TD className="whitespace-nowrap text-xs">
+                      <div className="text-slate-700">{cls.classType === 'one_on_one' ? 'Kèm 1-1' : 'Nhóm'}</div>
+                      <div className="text-slate-400">
+                        {({ morning: 'Sáng', afternoon: 'Chiều', evening: 'Tối' } as Record<string, string>)[cls.shift || ''] || '—'}
+                      </div>
+                    </TD>
                     <TD className="whitespace-nowrap">
                       {cls.mainTeacher?.name || <span className="text-slate-400">—</span>}
                     </TD>

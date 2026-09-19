@@ -11,13 +11,18 @@ const prisma = new PrismaClient();
 const classSchema = z.object({
   courseId: z.string(),
   format: z.string().default('online'),
+  classType: z.enum(['group', 'one_on_one']).default('group'),
+  shift: z.string().optional(), // morning(Sáng 8-11), afternoon(Chiều 14-16), evening(Tối 19-21)
   startDate: z.string(),
   endDate: z.string(),
+  minStudents: z.number().optional(),
   maxStudents: z.number().optional(),
   mainTeacherId: z.string().optional(),
   supportTeacherId: z.string().optional(),
   schedule: z.string().optional(),
   meetingLink: z.string().optional(),
+  driveLink: z.string().optional(),
+  videoLink: z.string().optional(),
   content: z.string().optional(),
   status: z.string().optional(),
 });
@@ -128,11 +133,15 @@ router.post('/', requirePermission('classes', 'write'), async (req: Authenticate
     const count = await prisma.class.count({ where: { courseId: data.courseId } });
     const code = `${course.code}-${String(count + 1).padStart(2, '0')}`;
 
+    // Lớp nhóm chưa đủ sĩ số min → Giữ chỗ; lớp 1-1 → planned ngay
+    const defaultStatus = data.status ||
+      (data.classType === 'group' ? 'reserved' : 'planned');
+
     const newClass = await prisma.class.create({
       data: {
         ...data,
         code,
-        status: data.status || 'planned',
+        status: defaultStatus,
         startDate: new Date(data.startDate),
         endDate: new Date(data.endDate),
       },
@@ -216,10 +225,14 @@ router.post('/:id/members', requirePermission('classes', 'write'), async (req: A
       },
     });
 
-    await prisma.class.update({
-      where: { id },
-      data: { currentStudents: { increment: 1 } },
-    });
+    const newCount = classData._count.classMembers + 1;
+    const classUpdate: any = { currentStudents: { increment: 1 } };
+    // Lớp nhóm: đủ sĩ số tối thiểu → chuyển Giữ chỗ → Tuyển sinh
+    if (classData.classType === 'group' && classData.status === 'reserved' &&
+        classData.minStudents && newCount >= classData.minStudents) {
+      classUpdate.status = 'recruiting';
+    }
+    await prisma.class.update({ where: { id }, data: classUpdate });
 
     res.status(201).json(member);
   } catch (error) {

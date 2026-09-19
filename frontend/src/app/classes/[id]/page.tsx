@@ -2,18 +2,23 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Users, Calendar, User, Video, Plus, Clock, X } from 'lucide-react';
+import { ArrowLeft, Users, Calendar, User, Video, Plus, Clock, X, Upload, Send } from 'lucide-react';
 
 interface ClassDetail {
   id: string;
   code: string;
   format: string;
+  classType?: string;
+  shift?: string;
   startDate: string;
   endDate: string;
+  minStudents?: number;
   maxStudents?: number;
   status: string;
   schedule?: string;
   meetingLink?: string;
+  driveLink?: string;
+  videoLink?: string;
   content?: string;
   course: {
     id: string;
@@ -58,11 +63,15 @@ export default function ClassDetailPage() {
   const [selectedStudent, setSelectedStudent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [scores, setScores] = useState<any[]>([]);
+  const [csvText, setCsvText] = useState('');
+  const [importMsg, setImportMsg] = useState('');
 
   useEffect(() => {
     if (params.id) {
       fetchClass(params.id as string);
       fetchStudents();
+      fetchScores(params.id as string);
     }
   }, [params.id]);
 
@@ -88,6 +97,39 @@ export default function ClassDetailPage() {
       headers: { 'Authorization': `Bearer ${token}` },
     });
     if (res.ok) setStudents((await res.json()).data);
+  };
+
+  const fetchScores = async (classId: string) => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/assessments?classId=${classId}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (res.ok) setScores((await res.json()).data || []);
+  };
+
+  const importScores = async () => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/assessments/import`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ csv: csvText }),
+    });
+    const data = await res.json();
+    setImportMsg(
+      res.ok
+        ? `Nhập ${data.imported} bản ghi${data.errors?.length ? ` — ${data.errors.length} lỗi: ${data.errors.slice(0, 3).join('; ')}` : ''}`
+        : data.error || 'Import thất bại'
+    );
+    fetchScores(params.id as string);
+  };
+
+  const sendScore = async (id: string) => {
+    const token = localStorage.getItem('token');
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/assessments/${id}/send`, {
+      method: 'PATCH',
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    fetchScores(params.id as string);
   };
 
   const addMember = async () => {
@@ -130,6 +172,7 @@ export default function ClassDetailPage() {
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
       planned: 'bg-slate-100 text-slate-800',
+      reserved: 'bg-amber-100 text-amber-800',
       recruiting: 'bg-brand-100 text-brand-800',
       full: 'bg-yellow-100 text-yellow-800',
       studying: 'bg-green-100 text-green-800',
@@ -142,6 +185,7 @@ export default function ClassDetailPage() {
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
       planned: 'Dự kiến',
+      reserved: 'Giữ chỗ',
       recruiting: 'Tuyển sinh',
       full: 'Đã đủ',
       studying: 'Đang học',
@@ -257,6 +301,7 @@ export default function ClassDetailPage() {
             {[
               { id: 'members', name: `Học viên (${activeMembers.length})` },
               { id: 'sessions', name: `Sessions (${classData.sessions.length})` },
+              { id: 'scores', name: 'Điểm số' },
               { id: 'info', name: 'Thông tin' },
             ].map((tab) => (
               <button
@@ -395,6 +440,78 @@ export default function ClassDetailPage() {
             </div>
           )}
 
+          {/* Scores Tab */}
+          {activeTab === 'scores' && (
+            <div className="space-y-4">
+              <div className="bg-white border border-slate-200 shadow-sm sm:rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-slate-900 mb-2">Import điểm (CSV)</h3>
+                <p className="text-xs text-slate-500 mb-2">
+                  Header: <code className="bg-slate-100 px-1 rounded">student_code,type,date,score,max_score,jlpt_result,notes</code>
+                  — type: quizizz/midterm/final/jlpt_real. Dán CSV từ Excel/Google Sheets.
+                </p>
+                <textarea
+                  value={csvText}
+                  onChange={(e) => setCsvText(e.target.value)}
+                  rows={4}
+                  placeholder={'student_code,type,date,score,max_score\nHV0001,midterm,2026-09-15,7.5,10'}
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono"
+                />
+                <div className="mt-2 flex items-center gap-3">
+                  <button onClick={importScores} disabled={!csvText.trim()}
+                    className="inline-flex items-center px-3 py-1.5 bg-brand-600 text-white rounded-lg text-sm disabled:opacity-50">
+                    <Upload className="h-4 w-4 mr-1" /> Import
+                  </button>
+                  {importMsg && <span className="text-xs text-slate-600">{importMsg}</span>}
+                </div>
+              </div>
+
+              <div className="bg-white border border-slate-200 shadow-sm overflow-hidden sm:rounded-xl">
+                <table className="min-w-full divide-y divide-slate-200">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">Học viên</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">Loại</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">Ngày</th>
+                      <th className="px-4 py-2 text-right text-xs font-medium text-slate-500">Điểm</th>
+                      <th className="px-4 py-2 text-center text-xs font-medium text-slate-500">Kết quả</th>
+                      <th className="px-4 py-2 text-center text-xs font-medium text-slate-500">Gửi HV</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {scores.map((s: any) => (
+                      <tr key={s.id} className="hover:bg-slate-50">
+                        <td className="px-4 py-2 text-sm text-slate-900">{s.student?.name} <span className="text-xs text-slate-400">{s.student?.code}</span></td>
+                        <td className="px-4 py-2 text-xs text-slate-600">
+                          {({ quizizz: 'Quizizz', midterm: 'Giữa khóa', final: 'Cuối khóa', jlpt_real: 'JLPT thật' } as Record<string, string>)[s.type] || s.type}
+                        </td>
+                        <td className="px-4 py-2 text-xs text-slate-600">{new Date(s.date).toLocaleDateString('vi-VN')}</td>
+                        <td className="px-4 py-2 text-sm text-right">
+                          {s.score != null ? `${s.score}${s.maxScore ? `/${s.maxScore}` : ''}` : '—'}
+                          {s.percent != null && <span className="text-xs text-slate-400 ml-1">({Math.round(s.percent * 100)}%)</span>}
+                        </td>
+                        <td className="px-4 py-2 text-center">
+                          {s.passed === true && <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Đạt</span>}
+                          {s.passed === false && <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Chưa đạt</span>}
+                          {s.passed == null && <span className="text-xs text-slate-400">—</span>}
+                        </td>
+                        <td className="px-4 py-2 text-center">
+                          {s.sentToStudent
+                            ? <span className="text-xs text-green-600">Đã gửi</span>
+                            : <button onClick={() => sendScore(s.id)} className="text-xs text-brand-600 hover:underline inline-flex items-center">
+                                <Send className="h-3 w-3 mr-0.5" /> Gửi
+                              </button>}
+                        </td>
+                      </tr>
+                    ))}
+                    {scores.length === 0 && (
+                      <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-500">Chưa có điểm nào</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {/* Info Tab */}
           {activeTab === 'info' && (
             <div className="bg-white border border-slate-200 shadow-sm sm:rounded-lg">
@@ -409,8 +526,11 @@ export default function ClassDetailPage() {
                     <dd className="mt-1 text-sm text-slate-900">{classData.course.name} ({classData.course.level})</dd>
                   </div>
                   <div>
-                    <dt className="text-sm font-medium text-slate-500">Hình thức</dt>
-                    <dd className="mt-1 text-sm text-slate-900">{classData.format}</dd>
+                    <dt className="text-sm font-medium text-slate-500">Hình thức lớp</dt>
+                    <dd className="mt-1 text-sm text-slate-900">
+                      {classData.classType === 'one_on_one' ? 'Kèm 1-1' : 'Lớp nhóm'}
+                      {classData.shift && ` • ${({ morning: 'Sáng 8-11h', afternoon: 'Chiều 14-16h', evening: 'Tối 19-21h' } as Record<string, string>)[classData.shift]}`}
+                    </dd>
                   </div>
                   <div>
                     <dt className="text-sm font-medium text-slate-500">Giáo trình</dt>
@@ -421,6 +541,31 @@ export default function ClassDetailPage() {
                     <dd className="mt-1 text-sm text-slate-900">{classData.schedule || '—'}</dd>
                   </div>
                   <div>
+                    <dt className="text-sm font-medium text-slate-500">Sĩ số min / max</dt>
+                    <dd className="mt-1 text-sm text-slate-900">
+                      {classData.minStudents ?? '—'} / {classData.maxStudents ?? '—'}
+                      {classData.status === 'reserved' && classData.minStudents && activeMembers.length < classData.minStudents && (
+                        <span className="ml-2 text-amber-600">(thiếu {classData.minStudents - activeMembers.length} HV để mở)</span>
+                      )}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-slate-500">Drive tài liệu</dt>
+                    <dd className="mt-1 text-sm">
+                      {classData.driveLink
+                        ? <a href={classData.driveLink} target="_blank" rel="noopener noreferrer" className="text-brand-600 hover:underline">Mở Drive</a>
+                        : '—'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-slate-500">Video học bù</dt>
+                    <dd className="mt-1 text-sm">
+                      {classData.videoLink
+                        ? <a href={classData.videoLink} target="_blank" rel="noopener noreferrer" className="text-brand-600 hover:underline">Mở video</a>
+                        : '—'}
+                    </dd>
+                  </div>
+                  <div className="md:col-span-2">
                     <dt className="text-sm font-medium text-slate-500">Nội dung</dt>
                     <dd className="mt-1 text-sm text-slate-900">{classData.content || '—'}</dd>
                   </div>
