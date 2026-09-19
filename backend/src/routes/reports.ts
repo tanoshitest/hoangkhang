@@ -533,6 +533,169 @@ router.get('/training-results', requirePermission('reports', 'read'), async (req
   }
 });
 
+// ==================== WEEKLY REPORT (kỳ tuần T2→CN) ====================
+
+// GET /api/reports/weekly?week=YYYY-MM-DD - Tổng hợp tuần (mặc định tuần hiện tại)
+router.get('/weekly', requirePermission('reports', 'read'), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const ref = req.query.week ? new Date(req.query.week as string) : new Date();
+    const day = ref.getDay(); // 0=CN..6=T7
+    const weekStart = new Date(ref);
+    weekStart.setDate(ref.getDate() - ((day + 6) % 7)); // về T2
+    weekStart.setHours(0, 0, 0, 0);
+    const weekEnd = new Date(weekStart.getTime() + 7 * 86400000); // T2 tuần sau
+
+    const [sessions, attendances, payments, payrollPeriods, newLeads, newEnrollments, warnings] = await Promise.all([
+      prisma.session.findMany({
+        where: { date: { gte: weekStart, lt: weekEnd } },
+        select: { status: true, calculatedHours: true, classId: true, teacherId: true },
+      }),
+      prisma.attendance.findMany({
+        where: { session: { date: { gte: weekStart, lt: weekEnd } } },
+        select: { status: true },
+      }),
+      prisma.payment.findMany({
+        where: { status: 'confirmed', paymentDate: { gte: weekStart, lt: weekEnd } },
+        select: { amount: true },
+      }),
+      prisma.teacherPayrollPeriod.findMany({
+        where: { periodStart: { gte: weekStart, lt: weekEnd } },
+        select: { status: true, totalAmount: true, totalHours: true },
+      }),
+      prisma.lead.count({ where: { createdAt: { gte: weekStart, lt: weekEnd } } }),
+      prisma.enrollment.count({ where: { createdAt: { gte: weekStart, lt: weekEnd } } }),
+      prisma.academicWarning.count({ where: { createdAt: { gte: weekStart, lt: weekEnd } } }),
+    ]);
+
+    const sessionsByStatus: Record<string, number> = {};
+    let taughtHours = 0;
+    const teacherSet = new Set<string>();
+    for (const s of sessions) {
+      sessionsByStatus[s.status] = (sessionsByStatus[s.status] || 0) + 1;
+      if (s.status === 'taught' || s.status === 'makeup') {
+        taughtHours += s.calculatedHours || 0;
+        teacherSet.add(s.teacherId);
+      }
+    }
+
+    const attByStatus: Record<string, number> = {};
+    let attTotal = 0;
+    for (const a of attendances) {
+      attByStatus[a.status] = (attByStatus[a.status] || 0) + 1;
+      attTotal++;
+    }
+    const attended = (attByStatus['present'] || 0) + (attByStatus['late'] || 0) + (attByStatus['early_leave'] || 0);
+
+    const collected = payments.reduce((s, p) => s + p.amount, 0);
+    const payrollTotal = payrollPeriods.reduce((s, p) => s + p.totalAmount, 0);
+    const payrollHours = payrollPeriods.reduce((s, p) => s + p.totalHours, 0);
+
+    res.json({
+      weekStart: weekStart.toISOString().slice(0, 10),
+      weekEnd: new Date(weekEnd.getTime() - 86400000).toISOString().slice(0, 10),
+      sessions: { total: sessions.length, byStatus: sessionsByStatus, taughtHours: Math.round(taughtHours * 10) / 10, teachers: teacherSet.size },
+      attendance: { total: attTotal, rate: attTotal > 0 ? Math.round((attended / attTotal) * 100) : null, byStatus: attByStatus },
+      revenue: { collected, paymentCount: payments.length },
+      payroll: { periods: payrollPeriods.length, totalAmount: payrollTotal, totalHours: Math.round(payrollHours * 10) / 10 },
+      pipeline: { newLeads, newEnrollments, warnings },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch weekly report' });
+  }
+});
+
+// ==================== STAFF COST (chi phí nhân sự trực tiếp) ====================
+
+// GET /api/reports/staff-cost?from=&to= - Lương GV + hoa hồng vs doanh thu
+router.get('/staff-cost', requirePermission('reports', 'read'), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const now = new Date();
+    const from = req.query.from
+      ? new Date(req.query.from as string)
+      : new Date(now.getFullYear(), now.getMonth() - 2, 1); // mặc định 3 tháng gần nhất
+    const to = req.query.to ? new Date(req.query.to as string) : now;
+    to.setHours(23, 59, 59, 999);
+
+    const [payrollPeriods, commissions, payments] = await Promise.all([
+      prisma.teacherPayrollPeriod.findMany({
+        where: { periodStart: { gte: from, lte: to }, status: { in: ['confirmed', 'paid'] } },
+        include: { teacher: { select: { id: true, code: true, name: true } } },
+        orderBy: { periodStart: 'asc' },
+      }),
+      prisma.commission.findMany({
+        where: { status: 'paid', paidAt: { gte: from, lte: to } },
+        include: { user: { select: { id: true, name: true } } },
+      }),
+      prisma.payment.aggregate({
+        where: { status: 'confirmed', paymentDate: { gte: from, lte: to } },
+        _sum: { amount: true },
+      }),
+    ]);
+
+    // Theo tháng
+    const byMonth: Record<string, { payroll: number; hours: number; commission: number }> = {};
+    const monthKey = (d: Date) => d.toISOString().slice(0, 7);
+    for (const p of payrollPeriods) {
+      const k = monthKey(p.periodStart);
+      if (!byMonth[k]) byMonth[k] = { payroll: 0, hours: 0, commission: 0 };
+      byMonth[k].payroll += p.totalAmount;
+      byMonth[k].hours += p.totalHours;
+    }
+    for (const c of commissions) {
+      const k = monthKey(c.paidAt!);
+      if (!byMonth[k]) byMonth[k] = { payroll: 0, hours: 0, commission: 0 };
+      byMonth[k].commission += c.amount;
+    }
+
+    // Theo GV
+    const byTeacher: Record<string, any> = {};
+    for (const p of payrollPeriods) {
+      if (!byTeacher[p.teacherId]) {
+        byTeacher[p.teacherId] = { teacher: p.teacher, totalAmount: 0, totalHours: 0, periods: 0, paid: 0 };
+      }
+      const t = byTeacher[p.teacherId];
+      t.totalAmount += p.totalAmount;
+      t.totalHours += p.totalHours;
+      t.periods++;
+      if (p.status === 'paid') t.paid += p.totalAmount;
+    }
+
+    // Theo sale (hoa hồng)
+    const bySale: Record<string, { name: string; amount: number; count: number }> = {};
+    for (const c of commissions) {
+      const name = c.user?.name || c.ctvName || 'CTV';
+      const k = c.userId || name;
+      if (!bySale[k]) bySale[k] = { name, amount: 0, count: 0 };
+      bySale[k].amount += c.amount;
+      bySale[k].count++;
+    }
+
+    const totalPayroll = payrollPeriods.reduce((s, p) => s + p.totalAmount, 0);
+    const totalCommission = commissions.reduce((s, c) => s + c.amount, 0);
+    const revenue = payments._sum.amount || 0;
+    const totalCost = totalPayroll + totalCommission;
+
+    res.json({
+      from: from.toISOString().slice(0, 10),
+      to: to.toISOString().slice(0, 10),
+      summary: {
+        totalPayroll,
+        totalCommission,
+        totalCost,
+        revenue,
+        costRatio: revenue > 0 ? Math.round((totalCost / revenue) * 100) : null,
+      },
+      byMonth,
+      byTeacher: Object.values(byTeacher).sort((a, b) => b.totalAmount - a.totalAmount),
+      bySale: Object.values(bySale).sort((a, b) => b.amount - a.amount),
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch staff cost report' });
+  }
+});
+
 // ==================== CSV EXPORT ====================
 
 // GET /api/reports/export/:type?format=csv - CSV export

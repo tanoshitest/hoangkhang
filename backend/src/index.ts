@@ -26,6 +26,7 @@ import portalRoutes from './routes/portal';
 import chatRoutes from './routes/chat';
 import { authenticateToken } from './middleware/auth';
 import { errorHandler } from './middleware/errorHandler';
+import { startScheduler } from './lib/scheduler';
 
 dotenv.config();
 
@@ -71,6 +72,7 @@ app.use(errorHandler);
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
+  startScheduler();
 });
 
 // Graceful shutdown

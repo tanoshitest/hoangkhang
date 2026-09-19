@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Download, BarChart3 } from 'lucide-react';
 import { formatVND, formatDate } from '../finance/page';
 
-type Tab = 'sales' | 'students' | 'classes' | 'academic' | 'finance' | 'teachers';
+type Tab = 'sales' | 'students' | 'classes' | 'academic' | 'finance' | 'teachers' | 'weekly' | 'staff-cost';
 
 const TABS: { id: Tab; name: string }[] = [
   { id: 'sales', name: 'Tuyển sinh' },
@@ -13,6 +13,8 @@ const TABS: { id: Tab; name: string }[] = [
   { id: 'academic', name: 'Đào tạo' },
   { id: 'finance', name: 'Tài chính' },
   { id: 'teachers', name: 'Giáo viên' },
+  { id: 'weekly', name: 'Kỳ tuần' },
+  { id: 'staff-cost', name: 'Chi phí nhân sự' },
 ];
 
 const STATUS_LABELS: Record<string, string> = {
@@ -41,8 +43,8 @@ export default function ReportsPage() {
     try {
       const token = localStorage.getItem('token');
       const params = new URLSearchParams();
-      if (range.from) params.set('from', range.from);
-      if (range.to) params.set('to', range.to);
+      if (range.from) params.set(tab === 'weekly' ? 'week' : 'from', range.from);
+      if (range.to && tab !== 'weekly') params.set('to', range.to);
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reports/${tab}?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -70,7 +72,7 @@ export default function ReportsPage() {
     }
   };
 
-  const hasRange = tab === 'sales' || tab === 'finance' || tab === 'teachers';
+  const hasRange = tab === 'sales' || tab === 'finance' || tab === 'teachers' || tab === 'weekly' || tab === 'staff-cost';
 
   return (
     <div>
@@ -114,6 +116,8 @@ export default function ReportsPage() {
               {tab === 'academic' && <AcademicReport data={data} />}
               {tab === 'finance' && <FinanceReport data={data} onExport={() => exportCsv('payments')} />}
               {tab === 'teachers' && <TeachersReport data={data} />}
+              {tab === 'weekly' && <WeeklyReport data={data} />}
+              {tab === 'staff-cost' && <StaffCostReport data={data} />}
             </>
           )}
         </div>
@@ -325,6 +329,135 @@ function FinanceReport({ data, onExport }: { data: any; onExport: () => void }) 
               <span className="font-medium">{formatVND(v)}</span>
             </div>
           ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WeeklyReport({ data }: { data: any }) {
+  const SESSION_LABELS: Record<string, string> = {
+    planned: 'Dự kiến', taught: 'Đã dạy', absent: 'GV vắng', makeup: 'Dạy bù',
+    rescheduled: 'Dời lịch', teacher_changed: 'Đổi GV',
+  };
+  const s = data.sessions || {};
+  const a = data.attendance || {};
+  const attTotal = a.total || 0;
+  return (
+    <div className="space-y-6">
+      <p className="text-sm text-slate-500">Tuần {formatDate(data.weekStart)} → {formatDate(data.weekEnd)}</p>
+      <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
+        <Card title="Buổi học trong tuần" value={s.total || 0} sub={`${s.taughtHours || 0} giờ • ${s.teachers || 0} GV`} />
+        <Card title="Chuyên cần" value={a.rate !== null && a.rate !== undefined ? `${a.rate}%` : '-'} sub={`${attTotal} lượt điểm danh`} />
+        <Card title="Doanh thu tuần" value={formatVND(data.revenue?.collected || 0)} sub={`${data.revenue?.paymentCount || 0} giao dịch`} />
+        <Card title="Lương GV tuần" value={formatVND(data.payroll?.totalAmount || 0)} sub={`${data.payroll?.periods || 0} kỳ • ${data.payroll?.totalHours || 0}h`} />
+      </div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="bg-white border border-slate-200 shadow-sm rounded-lg p-6">
+          <h3 className="text-md font-medium text-slate-900 mb-3">Buổi học theo trạng thái</h3>
+          {Object.entries((s.byStatus || {}) as Record<string, number>).map(([k, v]) => (
+            <BarRow key={k} label={SESSION_LABELS[k] || STATUS_LABELS[k] || k} value={v} total={s.total || 0} />
+          ))}
+          {!(s.total > 0) && <p className="text-sm text-slate-500">Chưa có buổi nào</p>}
+        </div>
+        <div className="bg-white border border-slate-200 shadow-sm rounded-lg p-6">
+          <h3 className="text-md font-medium text-slate-900 mb-3">Điểm danh trong tuần</h3>
+          {Object.entries((a.byStatus || {}) as Record<string, number>).map(([k, v]) => (
+            <BarRow key={k} label={STATUS_LABELS[k] || k} value={v} total={attTotal} />
+          ))}
+          {!(attTotal > 0) && <p className="text-sm text-slate-500">Chưa điểm danh</p>}
+        </div>
+        <div className="bg-white border border-slate-200 shadow-sm rounded-lg p-6">
+          <h3 className="text-md font-medium text-slate-900 mb-3">Pipeline tuần</h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between"><span className="text-slate-600">Lead mới</span><span className="font-medium">{data.pipeline?.newLeads || 0}</span></div>
+            <div className="flex justify-between"><span className="text-slate-600">Ghi danh mới</span><span className="font-medium">{data.pipeline?.newEnrollments || 0}</span></div>
+            <div className="flex justify-between"><span className="text-slate-600">Cảnh báo học tập</span><span className="font-medium">{data.pipeline?.warnings || 0}</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StaffCostReport({ data }: { data: any }) {
+  const summary = data.summary || {};
+  const months = Object.entries((data.byMonth || {}) as Record<string, { payroll: number; hours: number; commission: number }>).sort();
+  return (
+    <div className="space-y-6">
+      <p className="text-sm text-slate-500">{formatDate(data.from)} → {formatDate(data.to)} — chỉ tính kỳ lương đã xác nhận/trả + HH đã chi</p>
+      <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
+        <Card title="Lương GV" value={formatVND(summary.totalPayroll || 0)} />
+        <Card title="Hoa hồng sale" value={formatVND(summary.totalCommission || 0)} />
+        <Card title="Tổng chi phí NS" value={formatVND(summary.totalCost || 0)} />
+        <Card title="Tỷ trọng / doanh thu" value={summary.costRatio !== null && summary.costRatio !== undefined ? `${summary.costRatio}%` : '-'} sub={`DT ${formatVND(summary.revenue || 0)}`} />
+      </div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="bg-white border border-slate-200 shadow-sm rounded-lg overflow-hidden">
+          <h3 className="text-md font-medium text-slate-900 px-6 pt-5 pb-3">Lương GV theo người</h3>
+          <table className="min-w-full divide-y divide-slate-200">
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">Giáo viên</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">Kỳ</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">Giờ</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">Tổng</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">Đã trả</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {(data.byTeacher || []).length === 0 ? (
+                <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-500">Chưa có kỳ lương</td></tr>
+              ) : (
+                (data.byTeacher || []).map((t: any) => (
+                  <tr key={t.teacher.id}>
+                    <td className="px-4 py-2.5 text-sm font-medium text-slate-900">{t.teacher.name} <span className="text-xs text-slate-500">({t.teacher.code})</span></td>
+                    <td className="px-4 py-2.5 text-sm text-slate-900">{t.periods}</td>
+                    <td className="px-4 py-2.5 text-sm text-slate-900">{t.totalHours.toFixed(1)}h</td>
+                    <td className="px-4 py-2.5 text-sm text-slate-900">{formatVND(t.totalAmount)}</td>
+                    <td className="px-4 py-2.5 text-sm text-slate-600">{formatVND(t.paid)}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        <div className="space-y-6">
+          <div className="bg-white border border-slate-200 shadow-sm rounded-lg p-6">
+            <h3 className="text-md font-medium text-slate-900 mb-3">Theo tháng</h3>
+            {months.length === 0 ? (
+              <p className="text-sm text-slate-500">Chưa có dữ liệu</p>
+            ) : (
+              <table className="min-w-full text-sm">
+                <thead><tr className="text-xs text-slate-500">
+                  <th className="text-left py-1">Tháng</th><th className="text-right">Lương GV</th><th className="text-right">Giờ</th><th className="text-right">Hoa hồng</th>
+                </tr></thead>
+                <tbody>
+                  {months.map(([m, v]) => (
+                    <tr key={m} className="border-t border-slate-100">
+                      <td className="py-1.5 text-slate-700">{m}</td>
+                      <td className="text-right text-slate-900">{formatVND(v.payroll)}</td>
+                      <td className="text-right text-slate-600">{v.hours.toFixed(1)}h</td>
+                      <td className="text-right text-slate-900">{formatVND(v.commission)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+          <div className="bg-white border border-slate-200 shadow-sm rounded-lg p-6">
+            <h3 className="text-md font-medium text-slate-900 mb-3">Hoa hồng đã chi</h3>
+            {(data.bySale || []).length === 0 ? (
+              <p className="text-sm text-slate-500">Chưa chi hoa hồng</p>
+            ) : (
+              (data.bySale || []).map((s: any) => (
+                <div key={s.name} className="flex justify-between py-1.5 text-sm">
+                  <span className="text-slate-600">{s.name}</span>
+                  <span className="font-medium">{formatVND(s.amount)} <span className="text-xs text-slate-400">({s.count} khoản)</span></span>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>

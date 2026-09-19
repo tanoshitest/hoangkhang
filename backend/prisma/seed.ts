@@ -387,6 +387,8 @@ async function main() {
     { key: 'main_teachers_per_class', value: '2', type: 'number', description: 'Số GV chính chia đều thưởng giữ sĩ số (Q10, Q26)' },
     { key: 'receipt_prefix', value: 'PT', type: 'string', description: 'Tiền tố số phiếu thu (PT0001...)' },
     { key: 'pdf_material_price', value: '0', type: 'number', description: 'Giá giáo trình PDF mặc định (VNĐ) — chỉnh theo khóa' },
+    { key: 'reminder_enabled', value: '1', type: 'number', description: 'Bật nhắc việc tự động (0=tắt) — quét mỗi giờ' },
+    { key: 'session_remind_hours', value: '24', type: 'number', description: 'Nhắc buổi học trước (giờ) cho GV/HV — 0=tắt rule này' },
   ];
 
   for (const setting of settings) {
