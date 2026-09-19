@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Users, Calendar, User, Video, Plus, Clock, X, Upload, Send } from 'lucide-react';
+import { ArrowLeft, Users, Calendar, User, Video, Plus, Clock, X, Upload, Send, Pencil } from 'lucide-react';
+import ScheduleSlotsEditor, { type ScheduleSlot } from '@/components/ScheduleSlotsEditor';
 
 interface ClassDetail {
   id: string;
@@ -16,6 +17,7 @@ interface ClassDetail {
   maxStudents?: number;
   status: string;
   schedule?: string;
+  scheduleSlots?: ScheduleSlot[];
   meetingLink?: string;
   driveLink?: string;
   videoLink?: string;
@@ -66,6 +68,42 @@ export default function ClassDetailPage() {
   const [scores, setScores] = useState<any[]>([]);
   const [csvText, setCsvText] = useState('');
   const [importMsg, setImportMsg] = useState('');
+  const [editingSchedule, setEditingSchedule] = useState(false);
+  const [slotDraft, setSlotDraft] = useState<ScheduleSlot[]>([]);
+  const [savingSchedule, setSavingSchedule] = useState(false);
+  const [scheduleError, setScheduleError] = useState('');
+  const [syncMsg, setSyncMsg] = useState('');
+
+  const saveSchedule = async () => {
+    if (!classData) return;
+    setSavingSchedule(true);
+    setScheduleError('');
+    setSyncMsg('');
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/${classData.id}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scheduleSlots: slotDraft }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setScheduleError(data.error || 'Lưu thất bại');
+        return;
+      }
+      setEditingSchedule(false);
+      if (data.scheduleSync) {
+        setSyncMsg(`Đã cập nhật lịch: xóa ${data.scheduleSync.removed} buổi cũ, tạo ${data.scheduleSync.created} buổi mới${data.scheduleSync.skippedBusy ? `, ${data.scheduleSync.skippedBusy} buổi bỏ qua do GV trùng lịch` : ''}.`);
+      } else {
+        setSyncMsg('Đã lưu lịch tuần.');
+      }
+      fetchClass(classData.id);
+    } catch {
+      setScheduleError('Lỗi kết nối');
+    } finally {
+      setSavingSchedule(false);
+    }
+  };
 
   useEffect(() => {
     if (params.id) {
@@ -536,9 +574,41 @@ export default function ClassDetailPage() {
                     <dt className="text-sm font-medium text-slate-500">Giáo trình</dt>
                     <dd className="mt-1 text-sm text-slate-900">{classData.course.textbook || '—'}</dd>
                   </div>
-                  <div>
-                    <dt className="text-sm font-medium text-slate-500">Lịch học</dt>
+                  <div className="sm:col-span-2">
+                    <dt className="text-sm font-medium text-slate-500 flex items-center gap-2">
+                      Lịch học
+                      {!editingSchedule && (
+                        <button
+                          onClick={() => { setSlotDraft(classData.scheduleSlots || []); setEditingSchedule(true); }}
+                          className="inline-flex items-center gap-1 text-xs text-brand-600 hover:text-brand-700 font-normal"
+                        >
+                          <Pencil className="h-3 w-3" /> Sửa lịch tuần
+                        </button>
+                      )}
+                    </dt>
                     <dd className="mt-1 text-sm text-slate-900">{classData.schedule || '—'}</dd>
+                    {editingSchedule && (
+                      <div className="mt-2 space-y-2">
+                        <ScheduleSlotsEditor value={slotDraft} onChange={setSlotDraft} />
+                        {scheduleError && <p className="text-xs text-red-600">{scheduleError}</p>}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={saveSchedule}
+                            disabled={savingSchedule}
+                            className="bg-brand-600 text-white rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-brand-700 disabled:opacity-50"
+                          >
+                            {savingSchedule ? 'Đang lưu...' : 'Lưu & tạo lại lịch'}
+                          </button>
+                          <button
+                            onClick={() => { setEditingSchedule(false); setScheduleError(''); }}
+                            className="border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-50"
+                          >
+                            Hủy
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {syncMsg && <p className="mt-1 text-xs text-green-600">{syncMsg}</p>}
                   </div>
                   <div>
                     <dt className="text-sm font-medium text-slate-500">Sĩ số min / max</dt>

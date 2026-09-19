@@ -4,6 +4,15 @@ import { PrismaClient } from '@prisma/client';
 import { requirePermission } from '../middleware/rbac';
 import { z } from 'zod';
 import type { AuthenticatedRequest } from '../types';
+import { generateClassSessions, regenerateFutureSessions, type ScheduleSlot } from '../lib/scheduleGen';
+
+const DAY_LABELS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+function slotsToText(slots: ScheduleSlot[]): string {
+  return [...slots]
+    .sort((a, b) => a.day - b.day || a.startTime.localeCompare(b.startTime))
+    .map((s) => `${DAY_LABELS[s.day]} ${s.startTime}-${s.endTime}`)
+    .join('; ');
+}
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -20,6 +29,12 @@ const classSchema = z.object({
   mainTeacherId: z.string().optional(),
   supportTeacherId: z.string().optional(),
   schedule: z.string().optional(),
+  scheduleSlots: z.array(z.object({
+    day: z.number().int().min(0).max(6), // 0=CN, 1=T2 ... 6=T7
+    startTime: z.string(),
+    endTime: z.string(),
+    teacherId: z.string().optional(),
+  })).optional(),
   meetingLink: z.string().optional(),
   driveLink: z.string().optional(),
   videoLink: z.string().optional(),
@@ -142,6 +157,7 @@ router.post('/', requirePermission('classes', 'write'), async (req: Authenticate
         ...data,
         code,
         status: defaultStatus,
+        schedule: data.schedule || (data.scheduleSlots?.length ? slotsToText(data.scheduleSlots) : undefined),
         startDate: new Date(data.startDate),
         endDate: new Date(data.endDate),
       },
@@ -151,7 +167,13 @@ router.post('/', requirePermission('classes', 'write'), async (req: Authenticate
       },
     });
 
-    res.status(201).json(newClass);
+    // Lịch tuần có cấu trúc → sinh buổi học tới ngày kết thúc lớp
+    let sessionsCreated = 0;
+    if (data.scheduleSlots?.length) {
+      sessionsCreated = (await generateClassSessions(newClass.id, null)).created;
+    }
+
+    res.status(201).json({ ...newClass, sessionsCreated });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.issues });
@@ -175,6 +197,9 @@ router.put('/:id', requirePermission('classes', 'write'), async (req: Authentica
       where: { id },
       data: {
         ...data,
+        ...(data.scheduleSlots !== undefined && !data.schedule && {
+          schedule: data.scheduleSlots.length ? slotsToText(data.scheduleSlots) : null,
+        }),
         ...(data.startDate && { startDate: new Date(data.startDate) }),
         ...(data.endDate && { endDate: new Date(data.endDate) }),
       },
@@ -184,7 +209,25 @@ router.put('/:id', requirePermission('classes', 'write'), async (req: Authentica
       },
     });
 
-    res.json(updated);
+    // Đổi lịch tuần → xóa buổi planned tương lai chưa đụng + sinh lại theo pattern mới
+    // Chỉ gia hạn endDate → fill buổi cho phần đuôi mới
+    let scheduleSync: { removed: number; created: number; skippedBusy: number } | undefined;
+    if (data.scheduleSlots !== undefined) {
+      scheduleSync = await regenerateFutureSessions(id);
+    } else if (data.endDate && updated.scheduleSlots) {
+      const newEnd = new Date(data.endDate);
+      if (newEnd > existing.endDate) {
+        const r = await generateClassSessions(id, null);
+        scheduleSync = { removed: 0, ...r };
+      } else if (newEnd < existing.endDate) {
+        const removed = await prisma.session.deleteMany({
+          where: { classId: id, status: 'planned', date: { gt: newEnd }, attendances: { none: {} } },
+        });
+        scheduleSync = { removed: removed.count, created: 0, skippedBusy: 0 };
+      }
+    }
+
+    res.json({ ...updated, scheduleSync });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.issues });

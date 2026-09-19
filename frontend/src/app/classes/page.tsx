@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/ca
 import { StatusBadge } from '@/components/ui/badge';
 import { Table, THead, TBody, TR, TH, TD, EmptyRow } from '@/components/ui/table';
 import { formatDate } from '@/lib/utils';
+import ScheduleSlotsEditor, { type ScheduleSlot } from '@/components/ScheduleSlotsEditor';
 
 interface ClassItem {
   id: string;
@@ -51,6 +52,7 @@ export default function ClassesPage() {
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [slots, setSlots] = useState<ScheduleSlot[]>([]);
   const [formData, setFormData] = useState({
     courseId: '',
     classType: 'group',
@@ -110,6 +112,7 @@ export default function ClassesPage() {
           mainTeacherId: formData.mainTeacherId || undefined,
           supportTeacherId: formData.supportTeacherId || undefined,
           schedule: formData.schedule || undefined,
+          scheduleSlots: slots.length ? slots : undefined,
           meetingLink: formData.meetingLink || undefined,
           driveLink: formData.driveLink || undefined,
           videoLink: formData.videoLink || undefined,
@@ -119,6 +122,7 @@ export default function ClassesPage() {
       if (response.ok) {
         setShowForm(false);
         setFormData({ courseId: '', classType: 'group', shift: '', startDate: '', endDate: '', minStudents: '2', maxStudents: '10', mainTeacherId: '', supportTeacherId: '', schedule: '', meetingLink: '', driveLink: '', videoLink: '' });
+        setSlots([]);
         fetchAll();
       } else {
         setError(data.detail || data.error || 'Failed to create class');
@@ -268,6 +272,12 @@ export default function ClassesPage() {
                   placeholder="VD: Tối 2-4-6, 19:30-21:30"
                   className="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-sm"
                 />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700">Lịch tuần cố định (tự tạo buổi học)</label>
+                <div className="mt-1">
+                  <ScheduleSlotsEditor value={slots} onChange={setSlots} />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700">Link họp</label>

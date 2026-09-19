@@ -367,6 +367,7 @@ model Class {
   mainTeacherId    String? // GV chính 1
   supportTeacherId String? // GV chính 2 (spec: 2 GV chính, không trợ giảng)
   schedule         String? // fixed weekly (T2-4-6) or flexible per-session (1-1)
+  scheduleSlots    Json? // [{day:0-6 (CN=0..T7=6),startTime,endTime,teacherId?}] — pattern tuần, auto-sinh sessions rolling 10 tuần
   meetingLink      String?
   driveLink        String? // Google Drive tài liệu của lớp (HV portal tải)
   videoLink        String? // link video buổi học (học bù lớp nhóm)
