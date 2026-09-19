@@ -404,8 +404,8 @@ function TimeGridView({
       className={cn(
         "grid gap-px bg-slate-200",
         week
-          ? "min-w-[68rem] grid-cols-[6rem_repeat(7,minmax(0,1fr))]"
-          : "grid-cols-[6rem_minmax(0,1fr)]",
+          ? "min-w-[70rem] grid-cols-[7.5rem_repeat(7,minmax(0,1fr))]"
+          : "grid-cols-[7.5rem_minmax(0,1fr)]",
       )}
     >
       {/* Hàng thứ/ngày dính khi cuộn các khung giờ. */}
